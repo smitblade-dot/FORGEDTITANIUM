@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forged Titanium Ltd</title>
+<meta name="description" content="Structured intelligence for travel, crude oil and gas &amp; LNG infrastructure — built for personnel operating in demanding environments.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#23272c; --bg-1:#2f353b; --bg-2:#3a4148;
+    --ti-0:#c9cfd5; --ti-1:#9aa2a9; --ti-2:#767f87;
+    --neon-blue:#2b7cff; --neon-red:#ff2b3a;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ font-family:'Space Grotesk',system-ui,-apple-system,sans-serif; color:var(--ti-0); background:var(--bg-0); }
+  a{ color:inherit; text-decoration:none; }
+  ::selection{ background:var(--neon-blue); color:#fff; }
+  @keyframes ftGlint{ 0%{ background-position:0 0, -150% 0; } 40%{ background-position:0 0, 150% 0; } 100%{ background-position:0 0, 150% 0; } }
+  @keyframes ftForge{ 0%{ letter-spacing:-0.06em; opacity:0; filter:blur(3px); animation-timing-function:cubic-bezier(.16,.8,.4,1); } 14%{ letter-spacing:0.86em; opacity:1; filter:blur(0); } 100%{ letter-spacing:0.86em; opacity:1; filter:blur(0); } }
+  .ft-portal:hover{ border-color:var(--neon-blue) !important; transform:translateY(-3px); box-shadow:0 8px 28px rgba(43,124,255,0.18); }
+  .ft-portal{ transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
+  .ft-badge-link:hover{ border-color:var(--neon-blue) !important; color:rgba(255,255,255,0.55) !important; box-shadow:0 0 0 1px rgba(43,124,255,0.25), 0 0 16px rgba(43,124,255,0.18); }
+  .ft-badge-link{ transition:border-color .18s ease, color .18s ease, box-shadow .18s ease; }
+  .ft-kicker-link:hover{ color:var(--neon-blue) !important; }
+  @media (prefers-reduced-motion: reduce){
+    .ft-bracket, .ft-forge, .ft-portal, .ft-badge-link{ animation:none !important; transition:none !important; letter-spacing:0.86em !important; }
+  }
+  @media (max-width: 860px){
+    .ft-grid2{ grid-template-columns:1fr !important; }
+    .ft-grid2 > div{ order:initial !important; }
+  }
+</style>
+</head>
+<body>
+
+<div style="width:100%; min-height:100vh; background:linear-gradient(180deg,var(--bg-0) 0%,var(--bg-1) 55%,var(--bg-2) 100%); position:relative; overflow:hidden;">
+
+  <div style="position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, rgba(0,0,0,0.03) 1px, rgba(0,0,0,0.03) 3px); mix-blend-mode:overlay; opacity:.5; z-index:1;"></div>
+
+  <section style="position:relative; min-height:92vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:64px 24px; overflow:hidden;">
+
+    <img src="images/hero-sunset.jpg" alt="" style="position:absolute; top:-200px; left:0; right:0; width:100%; height:calc(100% + 200px); object-fit:cover; object-position:center 58%; filter:saturate(1.08) contrast(1.05); z-index:0;">
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(35,39,44,0.30) 0%, rgba(35,39,44,0.58) 42%, var(--bg-0) 96%), linear-gradient(90deg, rgba(0,0,0,0.32), rgba(0,0,0,0) 38%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.32)); z-index:1;"></div>
+
+    <div style="position:absolute; top:26px; left:26px; width:42px; height:42px; border-top:2px solid var(--neon-blue); border-left:2px solid var(--neon-blue); opacity:.5; z-index:2;"></div>
+    <div style="position:absolute; top:26px; right:26px; width:42px; height:42px; border-top:2px solid var(--neon-blue); border-right:2px solid var(--neon-blue); opacity:.5; z-index:2;"></div>
+    <div style="position:absolute; bottom:26px; left:26px; width:42px; height:42px; border-bottom:2px solid var(--neon-blue); border-left:2px solid var(--neon-blue); opacity:.5; z-index:2;"></div>
+    <div style="position:absolute; bottom:26px; right:26px; width:42px; height:42px; border-bottom:2px solid var(--neon-blue); border-right:2px solid var(--neon-blue); opacity:.5; z-index:2;"></div>
+
+    <div style="position:absolute; top:72px; left:0; right:0; z-index:3; display:flex; align-items:baseline; justify-content:center; gap:0; font-weight:600; font-size:11px; letter-spacing:.28em; text-transform:uppercase; text-align:center;">
+      <a href="https://smitblade-dot.github.io/Travel_Intelligence/" target="_blank" rel="noopener" class="ft-kicker-link" style="color:var(--ti-0); transition:color .18s ease;">TI — Travel Intelligence</a>
+      <span style="color:var(--ti-2); padding:0 10px;">·</span>
+      <a href="https://smitblade-dot.github.io/crude-flow-dashboard/" target="_blank" rel="noopener" class="ft-kicker-link" style="color:var(--ti-0); transition:color .18s ease;">OI — Crude Oil Intelligence</a>
+      <span style="color:var(--ti-2); padding:0 10px;">·</span>
+      <a href="https://smitblade-dot.github.io/gas-lng-flow-dashboard/" target="_blank" rel="noopener" class="ft-kicker-link" style="color:var(--ti-0); transition:color .18s ease;">GI — Gas &amp; LNG Intelligence</a>
+    </div>
+
+    <div style="position:relative; z-index:3; display:flex; flex-direction:column; align-items:center; gap:22px; max-width:900px; margin-top:390px;">
+      <div class="ft-bracket" style="width:640px; max-width:85vw; height:2px; background-image:linear-gradient(90deg, rgba(43,124,255,0.25) 0%, rgba(43,124,255,0.25) 100%), linear-gradient(90deg, transparent, rgba(160,205,255,1), transparent); background-size:100% 100%, 26% 100%; background-repeat:no-repeat; background-position:0 0, -150% 0; box-shadow:0 0 20px 2px rgba(43,124,255,0.4); animation:ftGlint 4.6s linear infinite;"></div>
+
+      <h1 class="ft-forge" style="position:relative; margin:0; font-weight:500; font-size:clamp(26px,4.2vw,48px); letter-spacing:0.86em; line-height:1.25; background-image:linear-gradient(100deg, #dfe3e7 0%, #aeb4bb 15%, #ffffff 40%, #ffffff 46%, #aeb4bb 68%, #dfe3e7 100%); background-size:100% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 0 55px rgba(255,255,255,0.4), 0 0 110px rgba(43,124,255,0.3); animation:ftForge 30s ease infinite;">FORGEDTITANIUM</h1>
+
+      <div class="ft-bracket" style="width:380px; max-width:60vw; height:2px; background-image:linear-gradient(90deg, rgba(43,124,255,0.25) 0%, rgba(43,124,255,0.25) 100%), linear-gradient(90deg, transparent, rgba(160,205,255,1), transparent); background-size:100% 100%, 26% 100%; background-repeat:no-repeat; background-position:0 0, -150% 0; box-shadow:0 0 20px 2px rgba(43,124,255,0.4); animation:ftGlint 4.6s linear infinite;"></div>
+
+      <div style="font-size:clamp(15px,2vw,19px); color:var(--ti-1); max-width:44ch; line-height:1.6;">Precision under pressure</div>
+    </div>
+  </section>
+
+  <section style="position:relative; z-index:2; padding:56px 24px 96px;">
+    <div style="max-width:1100px; margin:0 auto;">
+      <div style="text-align:center; font-weight:500; letter-spacing:.32em; text-transform:uppercase; font-size:12px; color:var(--ti-2); margin-bottom:36px;">Intelligence Portals</div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px;">
+
+        <a href="https://smitblade-dot.github.io/Travel_Intelligence/" target="_blank" rel="noopener" class="ft-portal" style="display:flex; flex-direction:column; gap:16px; padding:30px 26px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0));">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <span style="font-weight:600; font-size:30px; letter-spacing:.03em; color:#fff;">TI</span>
+            <span style="font-size:11px; letter-spacing:.1em; color:var(--ti-2);">01 / 03</span>
+          </div>
+          <div style="font-size:14px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ti-0);">Travel Intelligence</div>
+          <div style="font-size:13px; color:var(--ti-1); line-height:1.55;">Country-by-country entry, security, health and emergency intelligence for teams on the move.</div>
+          <div style="margin-top:6px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--neon-blue);">Open portal →</div>
+        </a>
+
+        <a href="https://smitblade-dot.github.io/crude-flow-dashboard/" target="_blank" rel="noopener" class="ft-portal" style="display:flex; flex-direction:column; gap:16px; padding:30px 26px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0));">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <span style="font-weight:600; font-size:30px; letter-spacing:.03em; color:#fff;">OI</span>
+            <span style="font-size:11px; letter-spacing:.1em; color:var(--ti-2);">02 / 03</span>
+          </div>
+          <div style="font-size:14px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ti-0);">Crude Oil Intelligence</div>
+          <div style="font-size:13px; color:var(--ti-1); line-height:1.55;">Upstream and midstream crude oil-sector site intelligence — operators, access routes and on-the-ground risk.</div>
+          <div style="margin-top:6px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--neon-blue);">Open portal →</div>
+        </a>
+
+        <a href="https://smitblade-dot.github.io/gas-lng-flow-dashboard/" target="_blank" rel="noopener" class="ft-portal" style="display:flex; flex-direction:column; gap:16px; padding:30px 26px; border:1px solid rgba(255,255,255,0.14); border-radius:6px; background:linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0));">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <span style="font-weight:600; font-size:30px; letter-spacing:.03em; color:#fff;">GI</span>
+            <span style="font-size:11px; letter-spacing:.1em; color:var(--ti-2);">03 / 03</span>
+          </div>
+          <div style="font-size:14px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ti-0);">Gas &amp; LNG Intelligence</div>
+          <div style="font-size:13px; color:var(--ti-1); line-height:1.55;">Pipeline, gas-field and LNG facility intelligence for regional operations and site access.</div>
+          <div style="margin-top:6px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--neon-blue);">Open portal →</div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <section style="position:relative; z-index:2; padding:20px 24px 88px;">
+    <div class="ft-grid2" style="max-width:1100px; margin:0 auto; display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:start;">
+      <div style="order:1;">
+        <div style="font-weight:500; letter-spacing:.24em; text-transform:uppercase; font-size:14px; color:var(--ti-0); margin-bottom:22px;">About <strong style="color:#fff; font-weight:600;">FORGED TITANIUM</strong></div>
+        <p style="max-width:62ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;"><strong style="color:var(--ti-0); font-weight:600;">FORGED TITANIUM</strong> was developed from years of experience operating on global energy infrastructure projects in demanding and often unpredictable environments.</p>
+        <p style="max-width:62ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;">Personnel working on these projects are frequently required to operate under significant constraints - time, location, environment, security and access. Working in high-risk locations, travelling through areas affected by conflict or navigating changing political situations adds another layer of pressure, particularly when highly skilled and specialised personnel are expected to perform regardless of the conditions around them.</p>
+        <p style="max-width:62ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;">Technical expertise and project experience are essential, but they do not always provide the information needed to make sound decisions in unfamiliar or rapidly changing environments.</p>
+        <p style="max-width:62ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;"><strong style="color:var(--ti-0); font-weight:600;">FORGED TITANIUM</strong> was built to bridge that gap.</p>
+        <p style="max-width:62ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;">We bring together structured intelligence on travel, crude oil infrastructure, gas and LNG infrastructure, and the environments in which people operate.</p>
+        <p style="max-width:62ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;">Our aim is simple: provide the information needed to understand the environment, prepare for the conditions and make informed decisions before personnel move.</p>
+        <p style="max-width:62ch; margin:0; color:var(--ti-1); font-size:15.5px; line-height:1.7;">Built in demanding conditions. Precision under pressure.</p>
+      </div>
+      <div style="order:2; position:sticky; top:32px; border-radius:8px; overflow:hidden; aspect-ratio:4/3; border:1px solid rgba(255,255,255,0.14); box-shadow:0 0 0 1px rgba(43,124,255,0.18), 0 18px 40px rgba(0,0,0,0.45);">
+        <img src="images/about-rocky-coast.jpg" alt="" style="width:100%; height:100%; object-fit:cover; filter:grayscale(.28) brightness(.92) contrast(1.12) saturate(1.1);">
+        <div style="position:absolute; inset:0; background:linear-gradient(155deg, rgba(43,124,255,0.14), rgba(35,39,44,0.32) 78%);"></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="position:relative; z-index:2; padding:0 24px 100px;">
+    <div class="ft-grid2" style="max-width:1100px; margin:0 auto; display:grid; grid-template-columns:.9fr 1.1fr; gap:56px; align-items:center;">
+      <div style="order:1; position:relative; border-radius:8px; overflow:hidden; aspect-ratio:4/3; border:1px solid rgba(255,255,255,0.14); box-shadow:0 0 0 1px rgba(255,43,58,0.16), 0 18px 40px rgba(0,0,0,0.45);">
+        <img src="images/capability-sunset.jpg" alt="" style="width:100%; height:100%; object-fit:cover; filter:grayscale(.32) brightness(.9) contrast(1.12) saturate(1.1);">
+        <div style="position:absolute; inset:0; background:linear-gradient(155deg, rgba(255,43,58,0.1), rgba(35,39,44,0.34) 78%);"></div>
+      </div>
+      <div style="order:2;">
+        <div style="font-weight:500; letter-spacing:.32em; text-transform:uppercase; font-size:12px; color:var(--ti-2); margin-bottom:22px;">Capability</div>
+        <p style="max-width:60ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;"><strong style="color:var(--ti-0); font-weight:600;">Travel Intelligence (TI):</strong> country-by-country entry, security, health and emergency intelligence for personnel operating across covered territories.</p>
+        <p style="max-width:60ch; margin:0 0 18px; color:var(--ti-1); font-size:15.5px; line-height:1.7;"><strong style="color:var(--ti-0); font-weight:600;">Crude Oil Intelligence (OI):</strong> upstream and midstream infrastructure intelligence covering operators, facilities, access routes and on-the-ground considerations for oil-sector travel.</p>
+        <p style="max-width:60ch; margin:0; color:var(--ti-1); font-size:15.5px; line-height:1.7;"><strong style="color:var(--ti-0); font-weight:600;">Gas &amp; LNG Intelligence (GI):</strong> pipeline, gas-field and LNG infrastructure intelligence supporting regional operations, personnel movement and site access.</p>
+      </div>
+    </div>
+  </section>
+
+  <div style="position:relative; z-index:2; padding:52px 24px 90px; text-align:center; font-size:12px; letter-spacing:.04em; line-height:1.9; color:var(--ti-2); border-top:1px solid rgba(255,255,255,0.08);">
+    <div>FORGEDTITANIUM LTD a Company Registered in the Republic of Cyprus,</div>
+    <div>Reg No: HE 490451</div>
+  </div>
+
+  <div style="position:fixed; bottom:18px; right:22px; display:flex; gap:12px; z-index:6;">
+    <a href="https://smitblade-dot.github.io/Travel_Intelligence/" target="_blank" rel="noopener" title="Ti 22 — Travel Intelligence" class="ft-badge-link" style="width:60px; height:60px; border:1px solid rgba(255,255,255,0.14); border-radius:10px; background:rgba(255,255,255,0.02); display:grid; grid-template-rows:auto 1fr; padding:9px 9px 7px 9px; gap:4px; color:rgba(255,255,255,0.2);">
+      <div style="justify-self:end; font-size:10px; letter-spacing:.08em; line-height:1;">22</div>
+      <div style="align-self:center; justify-self:start; font-size:20px; font-weight:500; letter-spacing:.06em; line-height:1;">Ti</div>
+    </a>
+    <div title="Ir 77" style="width:60px; height:60px; border:1px solid rgba(255,255,255,0.14); border-radius:10px; background:rgba(255,255,255,0.02); display:grid; grid-template-rows:auto 1fr; padding:9px 9px 7px 9px; gap:4px; color:rgba(255,255,255,0.2);">
+      <div style="justify-self:end; font-size:10px; letter-spacing:.08em; line-height:1;">77</div>
+      <div style="align-self:center; justify-self:start; font-size:20px; font-weight:500; letter-spacing:.06em; line-height:1;">Ir</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
