@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="#23272c"/>
+  <rect x="3" y="3" width="58" height="58" rx="11" fill="none" stroke="#2b7cff" stroke-width="3.5"/>
+  <text x="32" y="45" text-anchor="middle" font-family="Arial, 'DejaVu Sans', sans-serif" font-weight="700" font-size="34" fill="#e7ebee">Ti</text>
+</svg>
