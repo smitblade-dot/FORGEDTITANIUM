@@ -1,0 +1,1744 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<meta name="acc-status-url" content="https://forgedtitanium-acc-service.fly.dev/public/status.json">
+<meta name="acc-cost-url" content="https://forgedtitanium-acc-service.fly.dev/public/cost.json">
+<title>FORGEDTITANIUM | Agent Command Centre</title>
+<style>
+@font-face{font-family:'Orbitron';src:url(assets/fonts/orbitron.woff2) format('woff2');font-weight:400 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Rajdhani';src:url(assets/fonts/rajdhani-600.woff2) format('woff2');font-weight:500 600;font-style:normal;font-display:swap}
+@font-face{font-family:'Rajdhani';src:url(assets/fonts/rajdhani-700.woff2) format('woff2');font-weight:700 900;font-style:normal;font-display:swap}
+:root{
+  color-scheme:dark;
+  --bg:#01050e;--line:#1f4a70;--line-hi:#56cfff;
+  --ink:#e8f6ff;--ink-2:#a9c6dc;--ink-3:#8aa8c0;
+  --s00:#62cfff;--s01:#17aaff;--s02:#ffab36;--s03:#a76bff;--s04:#ffd166;--s05:#3ef3a1;--s06:#ff5abb;
+  --st-working:#5fd4ff;--st-idle:#9fd0ff;--st-awaiting:#ffc46a;--st-failed:#ff8a5c;--st-offline:#8da0b2;--st-unknown:#8aa8c0;
+  --sev-violation:#ff7a59;--sev-review:#ffc46a;--sev-data:#c49bff;--sev-identifier:#6edbff;--sev-info:#8aa3b8;
+  --display:'Rajdhani','Bahnschrift','Segoe UI',Arial,sans-serif;
+  --brand:'Orbitron','Rajdhani','Bahnschrift','Segoe UI',Arial,sans-serif;
+  --body:'Inter','Segoe UI',Arial,sans-serif;
+  --glass:linear-gradient(160deg,#0a2a4a99,#05122a99);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--line-hi);outline-offset:2px}
+.fx-bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;display:block}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{position:relative;z-index:0;min-height:100vh;display:flex;flex-direction:column}
+
+/* Top line: brand, feed state, clock */
+.hud-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:center;padding:14px 24px 4px;position:relative;z-index:6}
+.brand h1{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(24px,2.5vw,38px);letter-spacing:.07em;line-height:1;text-shadow:0 0 22px #2fb4ffaa;background:linear-gradient(90deg,#fff,#a9e6ff 75%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand h1 small{font-size:.38em;vertical-align:super;letter-spacing:.1em;-webkit-text-fill-color:var(--ink-2)}
+.brand p{margin:5px 0 0;font-family:var(--display);font-weight:600;font-size:clamp(13px,1.15vw,17px);letter-spacing:.32em;color:var(--s00);text-shadow:0 0 12px #35b6ff99}
+.notice{margin:0;justify-self:center;max-width:min(760px,100%);padding:5px 16px;font-size:12px;line-height:1.35;color:#ffd9a0;text-align:center;border-top:1px solid #7a5a1f88;border-bottom:1px solid #7a5a1f88;background:linear-gradient(90deg,transparent,#2a1c0a88,transparent)}
+.clock{text-align:right;font-family:var(--display)}
+.clock .d{font-size:13px;color:var(--ink-2);font-weight:600;letter-spacing:.06em}
+.clock .t{font-size:clamp(24px,2.1vw,32px);font-weight:700;letter-spacing:.05em;line-height:1.05;text-shadow:0 0 16px #35b6ffaa}
+.clock .z{font-size:12px;color:var(--s00);font-weight:600;letter-spacing:.08em}
+
+/* The orbital stage dominates the screen */
+.stage{position:relative;flex:1 1 auto;height:calc(100vh - 252px);min-height:520px;overflow:hidden;margin:0}
+.stage svg{position:absolute;inset:0;width:100%;height:100%;z-index:2;overflow:hidden;display:block}
+.stage .earth{position:absolute;pointer-events:none;z-index:1;display:block}
+.node{cursor:pointer;transition:filter .3s}
+.node .halo{transition:stroke-width .3s,opacity .3s}
+.node:hover .halo,.node:focus-visible .halo,.node.active .halo{stroke-width:7;opacity:1}
+.node:hover,.node.active{filter:brightness(1.16)}
+.node:focus{outline:none}
+.node:focus-visible .ring{stroke:#fff}
+.nodename{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.08em;fill:#fff;paint-order:stroke;stroke:#010612;stroke-width:4px;stroke-linejoin:round}
+.nodedata{font-family:var(--body);font-size:11.5px;fill:#cfe6f5;paint-order:stroke;stroke:#010612;stroke-width:3.5px;stroke-linejoin:round}
+.badge-num{font-family:var(--display);font-weight:700;font-size:21px;fill:#fff}
+.core-num,.core-name,.core-sub,.core-st{paint-order:stroke;stroke:#010a1a;stroke-width:3.4px;stroke-linejoin:round}
+.core-num{font-family:var(--display);font-weight:700;font-size:38px}
+.core-name{font-family:var(--display);font-weight:700;font-size:16.5px;letter-spacing:.05em;fill:#fff}
+.core-sub{font-family:var(--display);font-weight:600;font-size:12.5px;letter-spacing:.16em;fill:#9fe3ff}
+.core-st{font-family:var(--body);font-size:10.5px}
+@keyframes breathe{0%,100%{opacity:.4}50%{opacity:.95}}
+.breathe{animation:breathe 4.5s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes dash{to{stroke-dashoffset:-180}}
+@keyframes pulse{0%{transform:scale(1);opacity:.85}100%{transform:scale(2.4);opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 80s linear infinite}
+.spin.rev{animation-duration:110s;animation-direction:reverse}
+.dash{animation:dash 18s linear infinite}
+.reveal{opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s linear .45s}
+.reveal.on{opacity:1;visibility:visible;transition:opacity .45s ease,visibility 0s}
+.plate{fill:#020d1e;fill-opacity:.95;stroke-width:1.4;stroke-opacity:.8}
+.stagewrap.focus #orbit .node:not(.active){opacity:.32;transition:opacity .5s}
+#orbit .node{transition:opacity .5s,filter .3s}
+.plate-head{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.14em}
+.sublabel{font-family:var(--body);font-size:13.5px;fill:#d9ecf8;paint-order:stroke;stroke:#010612;stroke-width:3px;stroke-linejoin:round}
+.sublink{cursor:pointer}
+.sublink:hover,.sublink:focus-visible{fill:#fff;text-decoration:underline;outline:none}
+.subnum{font-family:var(--display);font-weight:700;font-size:14px}
+.sat{cursor:pointer}
+.sat:focus{outline:none}
+.sat .satpulse{transform-box:fill-box;transform-origin:center;opacity:0}
+.sat[data-s=working] .satpulse{animation:pulse 2s ease-out infinite}
+.sat .satname{font-family:var(--display);font-weight:700;font-size:11.5px;fill:#eaf7ff;paint-order:stroke;stroke:#010612;stroke-width:3.5px;stroke-linejoin:round;letter-spacing:.03em}
+.sat:hover .glyph,.sat:focus-visible .glyph{filter:brightness(1.35)}
+.sat:focus-visible .satring{stroke:#fff}
+.glyph .gfill{transition:fill .3s}
+
+/* HUD instruments: transparent, layered, never boxes */
+.hud{position:absolute;z-index:5;pointer-events:none;font-family:var(--display);color:var(--ink);transition:opacity .45s ease}
+.stagewrap.focus .hud{opacity:0;pointer-events:none}
+.stagewrap.focus .hud > *{pointer-events:none}
+.hud > *{pointer-events:auto}
+.hud-tl{left:26px;top:16px;width:300px}
+.hud-tr{right:26px;top:16px;width:300px;text-align:right}
+.hud-bl{left:26px;bottom:12px;width:310px}
+.hud-br{right:26px;bottom:12px;width:300px;text-align:right}
+.hud h2{margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:.22em;color:#9fe3ff;text-transform:uppercase;display:flex;align-items:center;gap:10px;text-shadow:0 0 10px #35b6ff88}
+.hud h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#56cfff99,transparent)}
+.hud-tr h2,.hud-br h2{flex-direction:row-reverse}
+.hud-tr h2::after,.hud-br h2::after{background:linear-gradient(270deg,#56cfff99,transparent)}
+.hud h2 em{font-style:normal;font-family:var(--body);font-size:10.5px;letter-spacing:.02em;font-weight:500;color:var(--ink-3);text-transform:none}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 18px}
+.kpi{padding:3px 0 5px 12px;border-left:2px solid #56cfff66;position:relative}
+.kpi b{display:block;font-family:var(--display);font-size:30px;font-weight:700;line-height:1;text-shadow:0 0 14px #35b6ffaa}
+.kpi b.nodata{font-size:15px;font-weight:600;color:var(--ink-3);text-shadow:none;line-height:1.5}
+.kpi span{display:block;font-family:var(--body);font-size:11px;color:var(--ink-2);line-height:1.25}
+.kpi.minor{display:none}
+.feedline{font-family:var(--body);font-size:12px;color:var(--ink-2);line-height:1.5}
+.feedline b{color:#fff;font-weight:600}
+.pulsedot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 6px 0 0;background:#5fd4ff;box-shadow:0 0 10px #5fd4ff;animation:breathe 2.4s ease-in-out infinite}
+.pulsedot.stale{background:#ffc46a;box-shadow:0 0 10px #ffc46a;animation:none}
+.pulsedot.none{background:transparent;border:1px dashed #8aa8c0;box-shadow:none;animation:none}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding:6px 0;font-size:12.5px;font-family:var(--body)}
+.rows .when{color:var(--ink-3);font-size:11.5px;white-space:nowrap}
+.rows .what b{display:block;font-weight:600;font-size:12.5px}
+.rows .what span{color:var(--ink-2)}
+#activity .rows li{position:relative;padding-left:20px;border-left:1px solid #56cfff55;margin-left:4px;grid-template-columns:auto 1fr}
+#activity .rows li::before{content:"";position:absolute;left:-5px;top:11px;width:9px;height:9px;border-radius:50%;background:#05122a;border:2px solid #62cfff;box-shadow:0 0 9px #62cfff}
+#activity .rows li:nth-child(n+5){display:none}
+.empty{color:var(--ink-3);font-size:12px;margin:4px 0;font-family:var(--body)}
+#approvals{margin-top:8px}
+#approvals .empty{font-size:11.5px}
+.keylist{list-style:none;margin:0;padding:0;font-family:var(--body);font-size:11.5px;color:var(--ink-2);display:grid;gap:3px}
+.keylist li{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.keylist svg{width:16px;height:16px;flex:none;overflow:visible}
+.hud-note{margin:8px 0 0;font-family:var(--body);font-size:10.5px;color:var(--ink-3);line-height:1.4}
+.sysbtn{pointer-events:auto;margin-top:8px;background:none;border:0;color:#9fe3ff;font-family:var(--display);font-weight:700;letter-spacing:.2em;font-size:12px;cursor:pointer;padding:4px 0;border-bottom:1px solid #56cfff66}
+.sysbtn:hover{color:#fff;border-color:#fff}
+.syspanel{display:none;margin-top:8px;padding:12px 14px;text-align:left;background:linear-gradient(160deg,#08254199,#040f22ee);border:1px solid #2a6a9a;border-radius:2px 14px 2px 14px;backdrop-filter:blur(8px);font-family:var(--body)}
+.syspanel.open{display:block;animation:rise .3s ease-out}
+.syspanel h3{margin:8px 0 4px;font-family:var(--display);font-size:12px;letter-spacing:.18em;color:#9fe3ff}
+.syspanel h3:first-child{margin-top:0}
+.kv{list-style:none;margin:0;padding:0}
+.kv li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid #17385a;font-size:12px}
+.kv li:first-child{border-top:0}
+.kv .v{color:var(--ink-3);text-align:right}
+.ringcell{display:flex;align-items:center;gap:9px}
+.sring{flex:none;width:26px;height:26px}
+.box-warn{color:#ffd9a0}
+
+/* Dock of agent orbs along the bottom */
+.dock{position:relative;z-index:6;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center;padding:2px 24px 10px;border-top:1px solid #1d4a7344;background:linear-gradient(180deg,transparent,#010612cc)}
+.dock h2{margin:0;font-family:var(--display);font-size:13px;letter-spacing:.24em;color:#9fe3ff;font-weight:700;text-shadow:0 0 10px #35b6ff88}
+.dock h2 em{display:block;font-style:normal;font-family:var(--body);font-size:10.5px;letter-spacing:.02em;font-weight:500;color:var(--ink-3);text-transform:none}
+.strip-grid{display:flex;gap:6px;overflow-x:auto;padding:6px 4px 4px;scrollbar-width:thin;scrollbar-color:#2a6a9a transparent}
+.agent{flex:none;width:122px;display:grid;justify-items:center;gap:0;text-align:center;padding:4px 4px 0;border:0;background:none;color:var(--ink);cursor:pointer;border-radius:14px;transition:transform .25s,background .25s}
+.agent:hover,.agent:focus-visible{transform:translateY(-3px);background:#0a2a4a55}
+.agent .orb{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;position:relative;border:2px solid var(--c);background:radial-gradient(circle at 38% 28%,#ffffff30,#04102200 70%),#041326;box-shadow:0 0 16px var(--c),inset 0 0 12px var(--c);margin-bottom:3px}
+.agent .orb svg{width:31px;height:31px;overflow:visible}
+.agent[data-s=working] .orb::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--c);animation:pulse 2s ease-out infinite}
+.agent[data-s=none] .orb,.agent[data-s=unknown] .orb{opacity:.72;border-style:dashed;box-shadow:none}
+.agent b{font-family:var(--display);font-size:12.5px;font-weight:700;letter-spacing:.03em;line-height:1.12;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.agent small{color:var(--ink-3);font-size:10.5px;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.agent small.id,.agent .fresh{display:none}
+.agent small:nth-of-type(3){display:none}
+.agent .agefresh{color:var(--ink-2)}
+.dockfilter{display:grid;gap:2px;font-family:var(--body);font-size:10.5px;color:var(--ink-3)}
+select.ctl{border:1px solid #2a6a9a;border-radius:8px;background:#06182cd9;color:var(--ink);padding:5px 8px;cursor:pointer}
+.btn{border:1px solid #37658a;border-radius:8px;background:#10243c;color:var(--ink);padding:7px 11px;cursor:pointer}
+.chip{display:inline-block;margin:3px 4px 0 0;padding:1px 7px;border-radius:9px;font-size:10.5px;font-weight:600;border:1px solid currentColor}
+.chip[data-sev=violation]{color:var(--sev-violation)}.chip[data-sev=review]{color:var(--sev-review)}.chip[data-sev=data]{color:var(--sev-data)}
+.chip[data-sev=identifier]{color:var(--sev-identifier)}.chip[data-sev=ok]{color:#7fe0b4}.chip[data-sev=info]{color:var(--sev-info)}
+.foot{position:relative;z-index:6;padding:0 24px 8px;font-family:var(--body);font-size:11px;color:var(--ink-3);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.foot strong{color:var(--ink-2)}
+.st{font-weight:600}
+.st[data-s=working]{color:var(--st-working)}.st[data-s=idle]{color:var(--st-idle)}.st[data-s=awaiting_approval]{color:var(--st-awaiting)}
+.st[data-s=failed]{color:var(--st-failed)}.st[data-s=offline]{color:var(--st-offline)}.st[data-s=unknown],.st[data-s=none]{color:var(--st-unknown)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--st-unknown)}
+.dot[data-s=working]{background:var(--st-working);box-shadow:0 0 8px var(--st-working)}.dot[data-s=idle]{background:var(--st-idle)}
+.dot[data-s=awaiting_approval]{background:var(--st-awaiting);border-radius:1px;transform:rotate(45deg)}.dot[data-s=failed]{background:var(--st-failed);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.dot[data-s=offline]{background:transparent;border:1px solid var(--st-offline)}
+.dot[data-s=none],.dot[data-s=unknown]{background:transparent;border:1px dashed var(--st-unknown)}
+
+/* Stream panel: a floating hologram, docked opposite the selected stream */
+.panel{position:absolute;z-index:7;top:3%;left:2.2%;width:min(410px,92%);max-height:92%;overflow:auto;padding:20px 22px 18px;border:0;border-left:2px solid var(--line-hi);background:linear-gradient(100deg,#06182ce6,#06122899 75%,#06122800);backdrop-filter:blur(10px);display:none;scrollbar-width:thin}
+.panel::before{content:"";position:absolute;left:0;top:0;width:46px;height:2px;background:#9fe8ff;box-shadow:0 0 12px #62cfff}
+.panel.right{left:auto;right:2.2%;border-left:0;border-right:2px solid var(--line-hi);background:linear-gradient(260deg,#06182ce6,#06122899 75%,#06122800);text-align:left}
+.panel.show{display:block;animation:rise .4s ease-out}
+.panel h2{margin:0 36px 2px 0;font-family:var(--display);font-size:25px;letter-spacing:.05em;text-shadow:0 0 14px #35b6ff77}
+.panel .sub{color:var(--ink-2);font-size:12.5px;margin:0 0 10px}
+.panel h3{font-family:var(--display);font-size:14px;letter-spacing:.14em;margin:14px 0 6px;color:#8fdcff;text-transform:uppercase}
+.panel p{font-size:13px;margin:6px 0}
+.panel ol{margin:0;padding-left:22px;font-size:13px}
+.panel ol li{padding:3px 0}
+.panel .agentlink,.panel button.sublink{background:none;border:0;padding:0;color:#bfe9ff;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+.panel .sublink[aria-pressed=true]{color:#fff;font-weight:700}
+.panel .subdetail{margin-top:10px;padding:10px 12px;border-left:2px solid #4fa8d8;background:#0a1e3699}
+.panel .rows li{border-top:1px solid #17385a}
+.panel .rows li:first-child{border-top:0}
+.close{position:absolute;right:12px;top:10px;border:1px solid #55748c;border-radius:50%;width:32px;height:32px;background:#0c2038cc;color:#fff;cursor:pointer;font-size:19px;line-height:1}
+.close:hover{border-color:#fff;box-shadow:0 0 12px #62cfff}
+
+/* Agent command interface: a holographic console. A core, radial navigation, floating activity and a floating facet card; no boxes. */
+.modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:10px;background:radial-gradient(ellipse at 50% 50%,#07264aea,#010712f6 72%);backdrop-filter:blur(7px)}
+.modal.open{display:flex;animation:rise .35s ease-out}
+.modal.open .detail{animation:consoleIn .6s cubic-bezier(.16,1,.3,1)}
+@keyframes consoleIn{from{opacity:0;transform:scale(.9);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+.detail{position:relative;width:min(1600px,100%);height:min(940px,calc(100vh - 20px))}
+.consolebar{position:absolute;left:8px;top:4px;right:8px;z-index:5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--display)}
+.crumb{background:none;border:0;border-bottom:1px solid #56cfff55;color:#9fe3ff;cursor:pointer;font-weight:700;letter-spacing:.14em;font-size:12.5px;padding:4px 2px;text-transform:uppercase}
+.crumb:hover{color:#fff;border-color:#fff}
+.consolebar .sep{color:#56cfff88}
+.detail .close{position:static;margin-left:auto;width:36px;height:36px}
+.cx{position:absolute;left:50%;top:51%;transform:translate(-50%,-50%);width:max(420px,min(780px,calc(100vw - 740px),calc(100vh - 120px)));aspect-ratio:1}
+.cx > svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.coretext{position:absolute;left:50%;top:55%;width:36%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.coretext h2{margin:0 0 3px;font-family:var(--display);font-size:clamp(14px,1.7vw,24px);line-height:1.08;letter-spacing:.03em;text-shadow:0 0 16px #35b6ffaa}
+.coretext .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(6px,.66vw,9.5px);color:var(--ink-2);word-break:break-all;line-height:1.2}
+.coretext .st{display:block;margin-top:8px;font-family:var(--display);font-size:clamp(14px,1.55vw,22px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 0 14px currentColor}
+.coretext .fresh-line{margin-top:3px;font-size:clamp(9px,.9vw,12px);color:var(--ink-2);font-family:var(--body)}
+.caption{position:absolute;left:50%;bottom:-.5%;transform:translateX(-50%);text-align:center;width:80%;pointer-events:none}
+.caption .path{font-family:var(--display);font-size:clamp(9px,.95vw,12.5px);letter-spacing:.16em;color:#9fe3ff;text-transform:uppercase}
+.tabs{position:absolute;inset:0;margin:0;padding:0}
+.tabs button{position:absolute;width:19%;aspect-ratio:1;transform:translate(-50%,-50%);display:grid;place-items:center;align-content:center;gap:2px;border-radius:50%;border:1.5px solid #3b8fc4;background:radial-gradient(circle at 36% 28%,#1b5a8a99,#04122899 70%);color:#cfeaff;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:.07em;font-size:clamp(9px,1vw,12.5px);line-height:1.1;text-transform:uppercase;box-shadow:0 0 18px #1a8be855,inset 0 0 14px #1a8be833;transition:box-shadow .35s,border-color .35s,transform .35s,background .35s}
+.tabs button svg{width:34%;height:auto;overflow:visible}
+.tabs button:hover,.tabs button:focus-visible{border-color:#9fe8ff;box-shadow:0 0 26px #4fc6ff99,inset 0 0 18px #4fc6ff55;transform:translate(-50%,-50%) scale(1.06)}
+.tabs button[aria-selected=true]{border-color:#fff;color:#fff;background:radial-gradient(circle at 36% 28%,#2a82bccc,#0a2a4acc 70%);box-shadow:0 0 34px #62cfffcc,inset 0 0 20px #62cfff66}
+.floatl{position:absolute;left:1.2%;top:52%;transform:translateY(-50%);width:min(290px,19vw);font-family:var(--display)}
+.floatr{position:absolute;right:1.2%;top:52%;transform:translateY(-50%);width:min(390px,26vw);display:grid;gap:16px}
+.floatl h3.ph{margin:0 0 10px}
+.tl{list-style:none;margin:0;padding:0 0 0 20px;position:relative}
+.tl::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:1px;background:linear-gradient(#56cfffcc,#56cfff11)}
+.tl li{position:relative;padding:5px 0 9px;font-family:var(--body);font-size:12.5px;line-height:1.35;animation:rise .5s ease-out both}
+.tl li svg{position:absolute;left:-21px;top:5px;width:18px;height:18px;overflow:visible}
+.tl li b{display:block;font-family:var(--display);font-size:13px;letter-spacing:.06em;color:#fff}
+.tl li span{color:var(--ink-2)}
+.tl li.dim{opacity:.55}
+.detailpane{position:relative;overflow:auto;max-height:calc(min(940px,100vh - 20px) - 330px);padding:14px 4px 6px 20px;border-left:2px solid #56cfff;background:linear-gradient(100deg,#06182cd6,#06122855 85%,#06122800);scrollbar-width:thin;animation:rise .45s ease-out}
+.detailpane::before{content:"";position:absolute;left:0;top:0;width:46px;height:2px;background:#9fe8ff;box-shadow:0 0 12px #62cfff}
+h3.ph{margin:0 0 8px;font-family:var(--display);font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:#bfeaff;text-shadow:0 0 12px #35b6ff88}
+.gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;justify-items:center}
+.gauge{display:grid;justify-items:center;gap:2px;text-align:center;font-family:var(--display)}
+.gauge svg{width:92px;height:92px;overflow:visible}
+.gauge b{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9fe3ff}
+.gauge small{font-family:var(--body);font-size:10.5px;color:var(--ink-3);line-height:1.2;max-width:116px}
+.pane-status{margin:-2px 0 10px;font-size:12px;color:var(--ink-2);font-family:var(--body);line-height:1.4}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.cell{border-top:1px solid #2b6a96;padding:5px 0 0}
+.cell label{display:block;font-family:var(--display);font-size:10.5px;letter-spacing:.16em;color:#8eb9d4;margin-bottom:2px;text-transform:uppercase}
+.cell span{font-size:13.5px;overflow-wrap:anywhere}
+.cell.wide{grid-column:1 / -1}
+.msg{border-left:2px solid #54b4e8;padding:9px 12px;background:#0a1e3699;color:#c4d7e9;font-size:13px}
+.hist{list-style:none;margin:0;padding:0 0 0 12px;border-left:1px solid #3b8fc455}
+.hist li{padding:7px 0 7px 14px;border-top:1px solid #17385a;font-size:12.5px;position:relative}
+.hist li:first-child{border-top:0}
+.hist li::before{content:"";position:absolute;left:-18px;top:13px;width:9px;height:9px;border-radius:50%;background:#05122a;border:2px solid #62cfff;box-shadow:0 0 8px #62cfff}
+.spark{display:block;width:100%;height:56px;margin:10px 0 2px;overflow:visible}
+.plain{margin:0;padding-left:18px;font-size:12.5px;color:#c4d7e9}.plain li{padding:2px 0}
+.fbar{height:5px;border-radius:3px;background:#12324f;overflow:hidden;margin-top:6px}
+.fbar i{display:block;height:100%;background:linear-gradient(90deg,#2a8be8,#7fe4ff);box-shadow:0 0 10px #62cfff}
+
+/* Console motion follows the reported state only */
+.core[data-s=working] .cring{animation:pulse 2.2s ease-out infinite}
+.core[data-s=idle] .cglow{animation:breathe 5s ease-in-out infinite}
+.core[data-s=awaiting_approval] .cglow{animation:breathe 2.4s ease-in-out infinite}
+.core[data-s=unknown] .cdash,.core[data-s=none] .cdash{animation:spin 140s linear infinite}
+.cring{transform-box:fill-box;transform-origin:center;opacity:0}
+.cdash{transform-box:fill-box;transform-origin:center}
+.cslow{transform-box:fill-box;transform-origin:center;animation:spin 90s linear infinite}
+.csweep{transform-box:fill-box;transform-origin:center;animation:spin 14s linear infinite}
+.cmotes{transform-box:fill-box;transform-origin:center;animation:spin 46s linear infinite reverse}
+
+/* ACC-R018: compact header indicators, hub-and-spoke links, cost instrument */
+.hud-top{grid-template-columns:auto minmax(0,1fr) auto}
+.hudcenter{justify-self:center;display:grid;gap:7px;justify-items:center;min-width:0;max-width:100%}
+.notice{margin:0;padding:3px 14px 3px 12px;border:0;border-radius:999px;background:#06182ccc;box-shadow:inset 0 0 0 1px #2a6a9a88,0 0 14px #1a8be833;font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.1em;color:#cfeaff;text-align:center;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notice::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:9px;background:#5fd4ff;box-shadow:0 0 9px #5fd4ff;vertical-align:0;animation:breathe 2.4s ease-in-out infinite}
+.notice.stale{color:#ffd9a0;box-shadow:inset 0 0 0 1px #7a5a1f99}
+.notice.stale::before{background:#ffc46a;box-shadow:0 0 9px #ffc46a;animation:none}
+.kpis{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 26px;border:0;background:none}
+.kpi{padding:0;border:0;display:flex;align-items:baseline;gap:7px}
+.kpi b{font-family:var(--display);font-size:22px;font-weight:700;line-height:1;text-shadow:0 0 12px #35b6ffaa}
+.kpi b.nodata{font-size:13px;color:var(--ink-3);text-shadow:none;font-weight:600}
+.kpi span{font-family:var(--display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.kpi.alert b{color:#ffc46a;text-shadow:0 0 12px #ffb54a}
+.kpi.minor{display:none}
+.link{pointer-events:none}
+.costbtn{pointer-events:auto;display:grid;gap:1px;justify-items:end;text-align:right;background:none;border:0;border-right:2px solid #56cfff99;padding:2px 12px 2px 0;cursor:pointer;color:inherit}
+.costbtn:hover,.costbtn:focus-visible{border-right-color:#fff}
+.costval{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.05;text-shadow:0 0 14px #35b6ffaa}
+.costval.nodata{font-size:19px;color:var(--ink-2);text-shadow:none}
+.costsub{font-family:var(--body);font-size:11.5px;color:var(--ink-3)}
+.hud-tr{z-index:8}
+.costpanel{display:none;margin:8px 0 0 auto;width:min(340px,100%);padding:12px 14px;text-align:left;background:linear-gradient(160deg,#082541f5,#030d1efa);border-right:2px solid #56cfff;backdrop-filter:blur(8px);font-family:var(--body);pointer-events:auto;max-height:min(60vh,520px);overflow:auto;scrollbar-width:thin}
+.costpanel.open{display:block;animation:rise .3s ease-out}
+.costpanel h3{margin:12px 0 4px;font-family:var(--display);font-size:12px;letter-spacing:.18em;color:#9fe3ff;text-transform:uppercase}
+.costpanel h3:first-child{margin-top:0}
+.costrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:4px 0;border-top:1px solid #17385a;font-size:12.5px}
+.costrow:first-of-type{border-top:0}
+.costrow .v{text-align:right;font-family:var(--display);font-size:15px;font-weight:700}
+.costrow .v.nodata{font-family:var(--body);font-size:12px;font-weight:500;color:var(--ink-3)}
+.costrow small{grid-column:1 / -1;color:var(--ink-3);font-size:10.5px;line-height:1.3}
+.costproposed{margin:0 0 8px;padding:3px 8px;border:1px dashed #ffc46a;color:#ffd9a0;font-family:var(--display);font-size:11px;letter-spacing:.14em}
+
+/* ACC-R018 acceptance corrections: left/right instrument columns, collapsible sections, activity-driven motion */
+.stage{height:calc(100vh - 132px);min-height:520px}
+.hudcenter{display:flex}
+.huds{position:absolute;inset:0;pointer-events:none;z-index:5}
+.hudcol{position:absolute;top:12px;bottom:10px;width:310px;display:flex;flex-direction:column;gap:12px;pointer-events:none;min-height:0;transition:opacity .45s ease}
+.hudleft{left:24px}.hudright{right:24px}
+.hudcol > *{pointer-events:auto}
+.hudcol > .grow{flex:1 1 auto;min-height:6px;pointer-events:none}
+.stagewrap.focus .hudcol{opacity:0;pointer-events:none}
+.stagewrap.focus .hudcol > *{pointer-events:none}
+.hud{position:static;width:auto;text-align:left;z-index:auto}
+.hud h2{flex-direction:row;margin:0 0 4px}
+.hud h2::after{background:linear-gradient(90deg,#56cfff99,transparent)}
+.hud-ind .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;justify-content:stretch}
+.hud-ind .kpi{display:block;padding:0 0 0 11px;border-left:2px solid #56cfff77}
+.hud-ind .kpi b{display:block;font-size:30px;line-height:1.05}
+.hud-ind .kpi b.nodata{font-size:15px;line-height:1.5}
+.hud-ind .kpi span{display:block;font-size:11.5px;margin-top:1px}
+.hud-ind .kpi.minor{display:none}
+.hud-cost h2{margin:0}
+.hud-cost .costbtn{border-right:0;border-left:2px solid #56cfff99;padding:0 0 0 12px;justify-items:start;text-align:left;margin-top:0}
+.hud-cost .costbtn:hover,.hud-cost .costbtn:focus-visible{border-left-color:#fff}
+.costpanel{margin:8px 0 0;width:auto;border-right:0;border-left:2px solid #56cfff;background:#030d1efa;box-shadow:0 10px 30px #000a;max-height:min(52vh,460px)}
+.hud-act #activity .rows li:nth-child(n+4){display:none}
+.fold{border-top:1px solid #1d4a73aa;font-family:var(--display)}
+.fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;padding:9px 2px;font-weight:700;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#9fe3ff;text-shadow:0 0 10px #35b6ff88;user-select:none}
+.fold > summary::-webkit-details-marker{display:none}
+.fold > summary::before{content:"";flex:none;width:7px;height:7px;border-right:2px solid #9fe3ff;border-bottom:2px solid #9fe3ff;transform:rotate(-45deg);transition:transform .25s;margin:0 3px 0 1px}
+.fold[open] > summary::before{transform:rotate(45deg)}
+.fold > summary:hover{color:#fff}
+.fold > summary em{margin-left:auto;font-style:normal;font-family:var(--body);font-size:10.5px;letter-spacing:.02em;text-transform:none;color:var(--ink-3);font-weight:500;text-shadow:none}
+.foldbody{background:#030d1efa;border-left:2px solid #56cfff;padding:10px 12px 12px;max-height:min(44vh,400px);overflow:auto;scrollbar-width:thin;text-align:left;font-family:var(--body);animation:rise .25s ease-out;box-shadow:0 12px 32px #000b}
+.foldbody h3{margin:10px 0 4px;font-family:var(--display);font-size:12px;letter-spacing:.18em;color:#9fe3ff;text-transform:uppercase}
+.foldbody h3:first-child{margin-top:0}
+.keylist li{justify-content:flex-start;flex-direction:row-reverse;justify-content:flex-end}
+.keylist{gap:5px}
+.strip-grid{display:grid;gap:3px;overflow:visible;padding:8px 0 0}
+.agent{width:auto;grid-template-columns:42px minmax(0,1fr);column-gap:10px;justify-items:start;text-align:left;padding:5px 6px;border-radius:10px;align-items:center}
+.agent:hover,.agent:focus-visible{transform:none;background:#0d2c4d99}
+.agent .orb{grid-row:span 3;width:38px;height:38px;margin:0}
+.agent .orb svg{width:26px;height:26px}
+.agent b{display:block;font-size:13px;-webkit-line-clamp:2}
+.agent small{font-size:10.5px}
+.dockfilter{display:grid;gap:2px;font-family:var(--body);font-size:10.5px;color:var(--ink-3)}
+.dockfilter select{width:100%}
+/* activity-driven emphasis: nothing pulses, and nothing moves on a link, unless a verified agent in that stream is Working */
+.link .linkflow{opacity:0;animation:none}
+.link .linkcore{stroke-opacity:.62}
+.link.live .linkflow{opacity:1;animation:dash 1.8s linear infinite;animation-direction:reverse}
+.link.live .linkcore{stroke-opacity:1}
+@keyframes nodepulse{0%,100%{stroke-opacity:.72;stroke-width:5}50%{stroke-opacity:1;stroke-width:10}}
+.node.active-stream .halo{animation:nodepulse 1.9s ease-in-out infinite}
+.node.active-stream .ring{stroke-width:5}
+
+@media (prefers-reduced-motion:reduce){
+  .node.active-stream .halo{animation:none!important;stroke-width:9;stroke-opacity:1}
+  .link.live .linkflow{animation:none!important}
+  .sweep,.flame,.chev,.spin,.dash,.linkflow,.cslow,.csweep,.cmotes,.tl li,.detailpane,.modal.open .detail,.breathe,.pulsedot,.notice::before,.sat[data-s=working] .satpulse,.agent[data-s=working] .orb::after,.panel.show,.modal.open,.syspanel.open,.core .cring,.core .cglow,.core .cdash{animation:none!important}
+  .reveal,.reveal.on{transition:none}
+}
+
+.stagewrap{position:relative;flex:1 1 auto;display:flex;flex-direction:column}
+.huds{position:absolute;inset:0;pointer-events:none;z-index:5}
+/* Tablet and mobile */
+@media (max-width:1180px){
+  .huds{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px;padding:12px 22px 6px;pointer-events:auto}
+  .hud{position:static;width:auto;pointer-events:auto;padding:0;text-align:left}
+  .hud-tr,.hud-br{text-align:left}
+  .hud-tr h2,.hud-br h2{flex-direction:row}
+  .hud-tr h2::after,.hud-br h2::after{background:linear-gradient(90deg,#56cfff99,transparent)}
+  .keylist li{justify-content:flex-start}
+  .stage{height:min(72vw,78vh);min-height:420px}
+  .hudcol{position:static;width:auto;min-height:auto}
+  .hudcol > .grow{display:none}
+  .hud-ind .kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stagewrap.focus .hudcol{opacity:1;pointer-events:auto}
+}
+@media (max-width:1100px){
+  #crumbAgent,.consolebar .sep + .crumb + .sep{display:none}
+  .detail{height:auto;max-height:calc(100vh - 20px);overflow:auto;padding:52px 6px 12px;display:grid;gap:16px;justify-items:center}
+  .cx{position:relative;left:auto;top:auto;transform:none;width:min(600px,100%);margin-bottom:62px}
+  .caption{bottom:-58px;width:94%}
+  .floatl,.floatr{position:static;transform:none;width:min(640px,100%)}
+  .floatr{order:1}.floatl{order:2}
+  .detailpane{max-height:none}
+}
+@media (max-width:640px){
+  .hud-top{grid-template-columns:1fr auto;padding:12px 14px 4px}
+  .hudcenter{grid-column:1 / -1;order:3;width:100%}
+  .notice{font-size:11.5px;letter-spacing:.05em;white-space:normal;line-height:1.3}
+  .kpis{gap:2px 14px}
+  .kpi b{font-size:19px}.kpi span{font-size:11px;letter-spacing:.1em}
+  .stage{height:112vw;min-height:380px}
+  .huds{grid-template-columns:1fr;padding:8px 14px 4px}
+  .hud-ind .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #orbit .reveal{display:none}
+  .nodename{font-size:24px}.nodedata{font-size:14px}.badge-num{font-size:26px}
+  .core-num{font-size:46px}.core-name{font-size:21px}.core-sub{font-size:14px}.core-st{font-size:12px}
+  .panel{position:fixed;top:7vh;left:4%;right:auto;width:92%;max-height:84vh;border-left:2px solid var(--line-hi);background:linear-gradient(160deg,#06182cf5,#061228f5)}
+  .panel.right{left:4%;right:auto;border-right:0}
+  .dock{grid-template-columns:1fr;padding:2px 12px 8px}
+  .dockfilter{display:none}
+  .grid2{grid-template-columns:1fr}
+  .tabs button{width:22%}
+  .gauge svg{width:78px;height:78px}
+  .agent{width:104px}
+}
+
+/* The page background was painted by body, which sits above the fixed backdrop canvas (z-index -1) and hid it completely. The root keeps the base colour; body is transparent so the backdrop shows. */
+body{background:transparent}
+/* ===================== ACC-R019: wordmark, clock with the synchronisation pill, holographic instrument panels, permanent AI costs ===================== */
+.hud-top{grid-template-columns:minmax(0,1fr) auto;align-items:start;padding:14px 26px 0;gap:24px}
+.brand{position:relative;padding-bottom:9px}
+.brand::after{content:"";position:absolute;left:0;bottom:0;width:min(560px,100%);height:1px;background:linear-gradient(90deg,#62cfffcc,#62cfff00)}
+.brand h1.wordmark{margin:0;font-family:var(--brand);font-weight:800;font-size:clamp(30px,4.7vw,80px);letter-spacing:.05em;line-height:1;white-space:nowrap;
+  background:linear-gradient(100deg,#ffffff 0%,#c9f1ff 30%,#52c6ff 55%,#ffffff 70%,#8fdcff 100%);background-size:100% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 12px #2fb4ffaa) drop-shadow(0 0 38px #1a6bff66)}
+.brand h1.wordmark small{font-size:.24em;vertical-align:super;letter-spacing:.16em;-webkit-text-fill-color:#a9c6dc;font-weight:600;margin-left:.35em}
+.brand p.tagline{margin:9px 0 0;display:flex;align-items:center;gap:14px;font-family:var(--brand);font-weight:600;font-size:clamp(10.5px,1.05vw,16px);letter-spacing:.42em;color:var(--s00);text-shadow:0 0 12px #35b6ff99;white-space:nowrap}
+.brand p.tagline::before{content:"";flex:none;width:44px;height:2px;background:linear-gradient(90deg,#62cfff,#62cfff00);box-shadow:0 0 10px #62cfff}
+.clock{display:grid;justify-items:end;gap:1px;text-align:right}
+.clock .d{font-family:var(--display);font-size:14px;letter-spacing:.12em;color:var(--ink-2);font-weight:600}
+.clock .t{font-family:var(--display);font-weight:700;font-size:clamp(30px,2.9vw,48px);letter-spacing:.06em;line-height:1.05;text-shadow:0 0 18px #35b6ffbb}
+.clock .z{font-family:var(--display);font-size:13px;letter-spacing:.12em;color:var(--s00);font-weight:600}
+.clock .notice{margin:7px 0 0;justify-self:end;max-width:100%}
+.stage{height:calc(100vh - 142px)}
+.hud h2{font-family:var(--brand);font-weight:700;font-size:11.5px;letter-spacing:.2em}
+.hud-ind .kpi b{font-family:var(--display);font-weight:700;font-size:34px}
+.hud-ind .kpi b.nodata{font-size:14px}
+.hud-ind .kpi span{font-family:var(--display);letter-spacing:.16em}
+.fold > summary{font-family:var(--brand);font-size:11.5px;letter-spacing:.2em}
+.rows .what b{font-family:var(--display);font-size:13.5px}
+
+/* holographic panel: chamfered corners, a bright rim, glass interior */
+.holo{position:relative;padding:1px;clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));background:linear-gradient(135deg,#9fefff,#2a76b8 30%,#173f6c 62%,#56cfffcc)}
+.holo-in{position:relative;clip-path:polygon(0 0,calc(100% - 21px) 0,100% 21px,100% 100%,21px 100%,0 calc(100% - 21px));background:linear-gradient(160deg,#0a2d52f5,#040f24f7);padding:13px 15px 14px}
+.holo-in::before{content:"";position:absolute;left:0;top:0;width:60px;height:2px;background:#9fe8ff;box-shadow:0 0 12px #62cfff}
+
+/* permanent AI costs */
+.hud-cost{flex:0 1 auto;min-height:190px;display:flex;filter:drop-shadow(0 0 18px #1a8be84d)}
+.hud-cost .holo{flex:1 1 auto;display:flex;min-height:0}
+.hud-cost .holo-in{flex:1 1 auto;min-height:0;overflow:auto;scrollbar-width:thin}
+.hud-cost h2{margin:0 0 9px;font-size:12px}
+.hud-cost h2 em{font-family:var(--body);font-size:10px}
+.hud-cost h2 em.proposed{color:#ffd9a0;border:1px dashed #ffc46a;padding:1px 6px;letter-spacing:.06em}
+.hud-cost h2 em:empty{display:none}
+.cp-totals{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:9px;border-bottom:1px solid #1d4a73}
+.cp-totals label{display:block;font-family:var(--display);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2)}
+.cp-totals .big{display:block;font-family:var(--display);font-weight:700;font-size:32px;letter-spacing:.02em;line-height:1.12;margin:3px 0 2px;text-shadow:0 0 18px #35b6ffcc}
+.cp-totals .big.nodata{font-family:var(--display);font-size:15px;font-weight:600;color:var(--ink-3);text-shadow:none;line-height:1.7}
+.cp-totals small{display:block;font-size:10px;color:var(--ink-3);line-height:1.3}
+.cp-sec h3{margin:11px 0 4px;font-family:var(--display);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:#9fe3ff;font-weight:700}
+.cp-cats,.cp-rows,.cp-chips,.cp-gl{list-style:none;margin:0;padding:0}
+[data-k=api]{--kc:#62cfff}
+.cp-cats li{display:grid;grid-template-columns:1fr auto;gap:0 8px;align-items:baseline;padding:4px 0 5px 11px;margin-bottom:3px;border-left:3px solid var(--kc)}
+.cp-cats li[data-s=unavailable]{border-left-style:dashed}
+.cp-cats .nm{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.03em}
+.cp-cats .cv,.cp-rows .cv{font-family:var(--display);font-weight:700;font-size:17px;text-shadow:0 0 10px #35b6ff77}
+.cv.nodata{font-family:var(--body);font-weight:500;font-size:11.5px;color:var(--ink-3);text-shadow:none}
+.cp-cats small,.cp-rows small{grid-column:1 / -1;font-size:10px;color:var(--ink-3);line-height:1.3}
+.cp-cats small i{font-style:normal;color:var(--ink-2)}
+.cp-trend{display:block;width:100%;height:auto;overflow:visible}
+.cp-ax{font-family:var(--body);font-size:9.5px;fill:#8aa8c0}
+.cp-legend{display:flex;gap:4px 11px;flex-wrap:wrap;margin-top:1px;font-size:9.5px;color:var(--ink-3)}
+.cp-legend span::before{content:"";display:inline-block;width:8px;height:8px;margin-right:4px;background:var(--kc,#4d7ea3)}
+.cp-legend .na::before{background:none;border:1px dashed #4d7ea3}
+.cp-rows li{display:grid;grid-template-columns:1fr auto;gap:0 8px;padding:3px 0;border-top:1px solid #17385a;font-size:12.5px;font-family:var(--display);font-weight:600}
+.cp-rows li:first-child{border-top:0}
+.cp-chips{display:flex;flex-wrap:wrap;gap:4px 6px}
+.cp-chips li{display:flex;gap:6px;align-items:baseline;padding:2px 9px;border:1px solid #2a6a9a;border-radius:12px;font-family:var(--display);font-weight:600;font-size:12px}
+.cp-chips li[data-s=unavailable]{border-style:dashed;color:var(--ink-3)}
+.cp-chips b{font-family:var(--display);font-size:13px}.cp-chips em{font-family:var(--body);font-style:normal;font-size:10px;color:var(--ink-3)}
+.cp-gaps summary{cursor:pointer;margin-top:11px;font-family:var(--display);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:#9fe3ff;font-weight:700}
+.cp-gaps summary:hover{color:#fff}
+.cp-gl{margin-top:5px}
+.cp-gl li{position:relative;padding:3px 0 3px 13px;font-family:var(--body);font-size:11px;color:var(--ink-2);line-height:1.35}
+.cp-gl li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:6px;border:1px solid #ffc46a;transform:rotate(45deg)}
+.cp-gl li[data-s=unavailable]::before{background:#ffc46a}
+.cp-note{margin:6px 0 0;font-family:var(--body);font-size:10.5px;color:var(--ink-3);line-height:1.4}
+.hudright .foldbody,.hudleft .foldbody{max-height:min(30vh,300px)}
+.hudright > .grow{flex:1 1 0}
+.hudleft .hud-act{flex:none}
+
+@media (max-width:1180px){
+  .hud-cost{min-height:0}
+  .hud-cost .holo-in{overflow:visible}
+  .stage{height:min(72vw,78vh);min-height:420px}
+}
+@media (max-width:640px){
+  .hud-top{grid-template-columns:1fr;gap:6px;padding:12px 14px 0}
+  .brand h1.wordmark{font-size:clamp(17px,5.4vw,26px);letter-spacing:.03em}
+  .brand p.tagline{font-size:9.5px;letter-spacing:.3em;gap:9px}.brand p.tagline::before{width:22px}
+  .clock{justify-items:start;text-align:left;grid-template-columns:auto 1fr;column-gap:12px;align-items:baseline}
+  .clock .d{grid-column:1 / -1}.clock .t{font-size:24px}.clock .z{align-self:center}
+  .clock .notice{grid-column:1 / -1;justify-self:start;margin-top:5px}
+  .cp-totals .big{font-size:21px}
+}
+
+/* ACC-R019 hub and stream identities */
+.core-num{font-family:var(--display);font-weight:700;font-size:62px;stroke-width:4px}
+.core-name{font-family:var(--brand);font-weight:700;font-size:13.5px;letter-spacing:.06em}
+.core-sub{font-family:var(--brand);font-weight:600;font-size:10px;letter-spacing:.24em}
+.core-st{font-family:var(--display);font-size:13px;font-weight:600}
+.nodename{font-size:19px}
+.badge-num{font-size:22px}
+.dash.slow{animation-duration:46s}
+.dash.rev{animation-direction:reverse}
+@keyframes sweepdash{from{stroke-dashoffset:0}to{stroke-dashoffset:calc(var(--len,820) * -1px)}}
+.sweep{animation:sweepdash 7s linear infinite}
+@keyframes flick{0%,100%{opacity:.4}30%{opacity:1}60%{opacity:.55}}
+.flame{animation:flick 1.6s ease-in-out infinite}
+@keyframes chevlift{0%,100%{opacity:.2}50%{opacity:1}}
+.chev{animation:chevlift 1.9s ease-in-out infinite}
+.node .orn{opacity:.95}
+
+/* ACC-R019: the left column carries the folds (one open at a time); the right column is the permanent AI costs panel */
+.hudleft .fold{flex:none}
+.hudleft .foldbody{max-height:min(34vh,330px)}
+.hud-cost{max-height:100%}
+@media (max-width:640px){
+  .hudcol{display:contents}
+  .hud-ind{order:1}.hud-cost{order:2}.hud-act{order:3}#foldAgents{order:4}#foldKey{order:5}#foldSys{order:6}
+}
+
+@media (max-height:820px) and (min-width:1181px){
+  .cp-sec h3{margin:7px 0 3px}.cp-cats li{padding:2px 0 3px 11px;margin-bottom:1px}.cp-totals .big{font-size:27px}.cp-totals{padding-bottom:6px}.hud-cost h2{margin-bottom:6px}
+  .cp-rows li{padding:2px 0}.cp-legend{display:none}
+}
+
+/* ACC-R019 final correction: agent-only cost content */
+.cp-al{grid-column:1 / -1;display:block;font-size:10px;color:var(--ink-3);line-height:1.35}
+.cp-bar{display:block;height:3px;margin-top:3px;background:#12324f;border-radius:2px;overflow:hidden}
+.cp-bar u{display:block;height:100%;background:#62cfff;text-decoration:none}
+.cp-bar.over u{background:#ff8a5c}
+.cp-exec .nm{font-size:12px}
+.cp-tok{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-family:var(--display);font-weight:600;font-size:12.5px}
+</style>
+</head>
+<body>
+<canvas id="fxBg" class="fx-bg" aria-hidden="true"></canvas>
+<div class="app">
+  <header class="hud-top">
+    <div class="brand">
+      <h1 class="wordmark">FORGEDTITANIUM <small>LTD</small></h1>
+      <p class="tagline"><span>AGENT COMMAND CENTRE</span></p>
+    </div>
+    <div class="clock" aria-label="Current time in Cyprus">
+      <div class="d" id="clockDate"></div>
+      <div class="t" id="clockTime"></div>
+      <div class="z" id="clockZone"></div>
+      <p class="notice" id="notice" role="status" aria-live="polite" title="Restricted public view: only state and report times are shown. Statuses older than 24 hours revert to Unknown."></p>
+    </div>
+  </header>
+
+  <div class="stagewrap">
+    <main class="stage" id="stage" aria-label="FORGEDTITANIUM stream orbital. Select a stream for detail.">
+      <canvas id="earth" class="earth" aria-hidden="true"></canvas>
+      <svg id="orbit" viewBox="0 0 1200 800" role="group"></svg>
+      <section class="panel" id="panel" role="dialog" aria-modal="false" aria-labelledby="panelTitle">
+        <button class="close" id="panelClose" type="button" aria-label="Close stream detail">&times;</button>
+        <h2 id="panelTitle"></h2>
+        <p class="sub" id="panelSub"></p>
+        <div id="panelBody"></div>
+      </section>
+    </main>
+    <div class="huds">
+      <div class="hudcol hudleft">
+        <aside class="hud hud-ind" aria-label="Fleet indicators">
+          <div class="kpis" id="kpis" aria-label="Summary figures from the register and the status feed"></div>
+        </aside>
+        <div class="grow"></div>
+        <aside class="hud hud-act" aria-label="Recent reported activity">
+          <h2 id="actTitle">Recent activity <em>not connected</em></h2>
+          <div id="activity"></div>
+          <h2 id="apprTitle" class="vh">Approval requests <em id="apprCount"></em></h2>
+          <div id="approvals" class="vh"></div>
+        </aside>
+        <details class="fold" id="foldAgents">
+          <summary><span id="regTitle">Agents</span><em id="agentsSummary"></em></summary>
+          <div class="foldbody">
+            <label class="dockfilter">Operating stream
+              <select id="agentFilter" class="ctl">
+                <option value="all">All streams</option>
+                <option value="01">01 Travel Intelligence</option>
+                <option value="02">02 Quality Solutions</option>
+                <option value="06">06 Venture Engine</option>
+              </select>
+            </label>
+            <div class="strip-grid" id="agentGrid"></div>
+          </div>
+        </details>
+        <details class="fold" id="foldKey">
+          <summary><span>Status key</span></summary>
+          <div class="foldbody">
+            <ul class="keylist" id="keyList"></ul>
+            <p class="hud-note" id="orbitLegend">Radial links show the company hierarchy: every stream belongs to 00. Moving data and a pulsing node appear only while a verified agent in that stream reports Working, and stop when that state changes or goes stale. No agent-to-agent message is evidenced, so none is drawn.</p>
+          </div>
+        </details>
+        <details class="fold" id="foldSys">
+          <summary><span>Systems</span></summary>
+          <div class="foldbody">
+            <h3 id="streamTitle">Stream status</h3>
+            <ul class="kv" id="streamStatus"></ul>
+            <h3 id="connTitle">Telemetry connections</h3>
+            <ul class="kv" id="connections"></ul>
+            <h3 id="excTitle">Routing exceptions <span id="excCount" class="box-warn"></span></h3>
+            <div id="exceptionsShort"></div>
+          </div>
+        </details>
+      </div>
+      <div class="hudcol hudright">
+        <aside class="hud hud-cost" aria-labelledby="costTitle">
+          <div class="holo"><div class="holo-in">
+            <h2 id="costTitle">AI costs <em id="costFlag"></em></h2>
+            <div id="costPanel" role="region" aria-label="AI costs: today, month to date, by type, by agent, by model and daily trend"></div>
+          </div></div>
+          <div class="feedline vh" id="feedLine"></div>
+        </aside>
+        <div class="grow"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <div><strong>FORGEDTITANIUM Agent Command Centre.</strong> Agent states come only from reports received by the ACC service and are shown in a restricted public view (state and times only). Where no report is available the status is Unknown. Nothing on this page is invented.</div>
+    <div>Times shown in Europe/Nicosia (EET/EEST); stored in UTC.</div>
+  </footer>
+</div>
+
+<div class="modal" id="agentModal" aria-hidden="true">
+  <section class="detail" role="dialog" aria-modal="true" aria-labelledby="detailName">
+    <div class="consolebar">
+      <button class="crumb" id="crumbCompany" type="button">00 Company</button><span class="sep">/</span>
+      <button class="crumb" id="crumbStream" type="button"></button><span class="sep">/</span>
+      <span class="crumb" id="crumbAgent" style="border:0;color:#fff"></span>
+      <button class="close" id="detailClose" type="button" aria-label="Close agent interface and return">&times;</button>
+    </div>
+    <div class="cx" id="core">
+      <svg id="coreSvg" viewBox="0 0 700 700" aria-hidden="true"></svg>
+      <div class="coretext">
+        <h2 id="detailName"></h2>
+        <div class="code" id="detailCode"></div>
+        <div id="detailState"></div>
+        <div class="fresh-line" id="detailFresh"></div>
+      </div>
+      <div class="caption"><div class="path" id="detailPath"></div><div id="detailChips"></div></div>
+      <nav class="tabs" id="detailTabs" aria-label="Agent information"></nav>
+    </div>
+    <aside class="floatl" id="detailTimeline" aria-label="Recent reported activity"></aside>
+    <div class="floatr">
+      <section class="detailpane" id="detailPane" aria-live="polite">
+        <h3 class="ph" id="detailPaneTitle"></h3>
+        <div class="pane-status" id="detailStatus"></div>
+        <div id="detailContent"></div>
+      </section>
+      <div class="gauges" id="detailGauges" aria-label="Circular status indicators"></div>
+    </div>
+  </section>
+</div>
+
+<script src="acc_register.js"></script>
+<script src="acc_core.js"></script>
+<script src="acc_visual.js"></script>
+<script>
+(function(){
+'use strict';
+const A = window.ACC;
+const store = A.createStore();
+let nowFn = () => Date.now();
+const $ = id => document.getElementById(id);
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+/* ---------- helpers ---------- */
+function el(tag, attrs, ...kids){
+  const n = document.createElement(tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)) { if (v === null || v === undefined) continue; if (k === 'text') n.textContent = v; else if (k === 'cls') n.className = v; else n.setAttribute(k, v); }
+  for (const k of kids) if (k !== null && k !== undefined) n.append(k);
+  return n;
+}
+function sv(tag, attrs, ...kids){
+  const n = document.createElementNS(SVGNS, tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)) { if (v === null || v === undefined) continue; if (k === 'text') n.textContent = v; else n.setAttribute(k, v); }
+  for (const k of kids) if (k) n.append(k);
+  return n;
+}
+const STATUS_TEXT = {working:'Active', idle:'Idle', awaiting_approval:'Awaiting approval', failed:'Failed', offline:'Disconnected', unknown:'Unknown (reported)'};
+const SEV_TEXT = {violation:'Violation', review:'Review', data:'Data', identifier:'Identifier', info:'Info'};
+function statusNode(ev){
+  const s = ev ? ev.status : 'none';
+  return el('span', {cls:'st', 'data-s':s, text: ev ? STATUS_TEXT[s] : 'Unknown, no report'});
+}
+function dot(ev){ return el('span', {cls:'dot', 'data-s': ev ? ev.status : 'none', 'aria-hidden':'true'}); }
+function chips(flags, includeInfo){
+  const f = el('span');
+  for (const x of flags) if (includeInfo || x.severity !== 'info') f.append(el('span', {cls:'chip', 'data-sev':x.severity, title:x.message, text:SEV_TEXT[x.severity] + ': ' + x.code}));
+  return f;
+}
+function eur(n){ return '\u20ac' + (n < 0.01 && n > 0 ? n.toFixed(4) : n.toFixed(2)); }
+function allowanceLine(a){
+  const u = A.allowanceUsage(store, a, nowFn());
+  if (!u.status.configured) return u.costedReports ? 'No approved allowance; ' + eur(u.reportedEur) + ' API cost reported' : 'No approved allowance; no cost reported';
+  return 'Today ' + eur(u.todayEur) + ' of ' + eur(u.status.daily) + ', month ' + eur(u.monthEur) + ' of ' + eur(u.status.monthly) + (u.breaches.length ? ', ' + u.breaches.length + ' breach(es)' : '');
+}
+function streamOf(id){ return A.STREAMS.find(s => s.id === id); }
+function agentByKey(k){ return A.REGISTER.find(a => A.agentKey(a) === k); }
+function idLine(a){ return a.code ? a.code : 'No verified code (interim: ' + a.interim_id + ')'; }
+const VER_TEXT = {verified:'Verified', not_evidenced:'Provisional: not evidenced', unverified:'Provisional: unverified'};
+const VER_SEV = {verified:'ok', not_evidenced:'review', unverified:'identifier'};
+function verChip(a){ return el('span', {cls:'chip', 'data-sev':VER_SEV[a.verification], text:VER_TEXT[a.verification]}); }
+const PERM_TEXT = {permitted:'Permitted', permitted_within_allowance:'Permitted within approved allowance', escalation_with_reason:'Escalation only, with recorded reason', approval_required:'Requires the owner\u2019s approval', not_permitted:'Not permitted'};
+function receivedLine(e){
+  if (!e.received_at_utc) return 'Not recorded';
+  const ms = Date.parse(e.received_at_utc), late = e.flags.some(f => f.code === 'DELIVERED_LATE');
+  return A.formatNicosia(ms, 'datetime') + (late ? ', delivered late' : '') + (e.delivery && e.delivery.attempts ? ' (buffered, attempt ' + e.delivery.attempts + ')' : '');
+}
+function provenance(e){ return e.public ? 'Restricted public view from the ACC service. Task details are not published.' : e.authenticated ? 'Stored report, authenticated (key ' + e.key_id + ').' : 'Imported report, source not authenticated.'; }
+
+/* ---------- clock ---------- */
+function tickClock(){
+  const now = nowFn();
+  $('clockDate').textContent = A.formatNicosia(now, 'date');
+  $('clockTime').textContent = A.formatNicosia(now, 'clock');
+  $('clockZone').textContent = 'Cyprus (' + A.tzLabel(now) + ')';
+}
+
+/* ---------- Status glyphs: every state has its own shape and a label, never colour alone ---------- */
+const STATE_LABEL = {working:'Active', idle:'Idle', awaiting_approval:'Awaiting approval', failed:'Failed', offline:'Disconnected', unknown:'Unknown', none:'Unknown, no report'};
+const SHAPE_KEY = [['working','Disc with play mark: active'], ['idle','Ring with bar: idle'], ['awaiting_approval','Diamond: awaiting approval'], ['failed','Triangle: failed'], ['offline','Slashed ring: disconnected'], ['none','Dashed ring: unknown, no report'], ['prov','Hexagon: provisional agent, not verified']];
+function hexPts(r){ return [0,1,2,3,4,5].map(i => { const a = Math.PI / 3 * i - Math.PI / 6; return (r * Math.cos(a)).toFixed(1) + ',' + (r * Math.sin(a)).toFixed(1); }).join(' '); }
+/* Returns a <g class="glyph"> centred on 0,0. state: working|idle|awaiting_approval|failed|offline|unknown|none. provisional draws a hexagon. */
+function glyph(state, r, color, provisional){
+  const g = sv('g', {class:'glyph', 'data-shape': state, 'aria-hidden':'true'}), sw = Math.max(1.4, r * .17);
+  if (provisional) {
+    g.append(sv('polygon', {points:hexPts(r), fill:'#041224', stroke:color, 'stroke-width':sw, 'stroke-dasharray': r * .55 + ' ' + r * .35}));
+    g.append(sv('text', {x:0, y:r * .36, 'text-anchor':'middle', 'font-family':'Rajdhani,Arial,sans-serif', 'font-weight':'700', 'font-size':(r * 1.05).toFixed(1), fill:color, text:'?'}));
+    return g;
+  }
+  switch (state) {
+    case 'working':
+      g.append(sv('circle', {r, fill:color, class:'gfill'}), sv('path', {d:`M${-r*.26} ${-r*.42} L${r*.48} 0 L${-r*.26} ${r*.42}Z`, fill:'#02101f'})); break;
+    case 'idle':
+      g.append(sv('circle', {r:r*.88, fill:'#06182c', stroke:color, 'stroke-width':sw * 1.2}), sv('rect', {x:-r*.42, y:-r*.1, width:r*.84, height:r*.2, rx:r*.06, fill:color})); break;
+    case 'awaiting_approval':
+      g.append(sv('path', {d:`M0 ${-r} L${r} 0 L0 ${r} L${-r} 0Z`, fill:color, class:'gfill'}), sv('rect', {x:-r*.09, y:-r*.4, width:r*.18, height:r*.5, fill:'#02101f'}), sv('circle', {cx:0, cy:r*.4, r:r*.11, fill:'#02101f'})); break;
+    case 'failed':
+      g.append(sv('path', {d:`M0 ${-r} L${r*1.0} ${r*.8} L${-r*1.0} ${r*.8}Z`, fill:color, class:'gfill', 'stroke-linejoin':'round'}), sv('rect', {x:-r*.09, y:-r*.4, width:r*.18, height:r*.55, fill:'#02101f'}), sv('circle', {cx:0, cy:r*.45, r:r*.11, fill:'#02101f'})); break;
+    case 'offline':
+      g.append(sv('circle', {r:r*.88, fill:'#06182c', stroke:color, 'stroke-width':sw}), sv('line', {x1:-r*.62, y1:r*.62, x2:r*.62, y2:-r*.62, stroke:color, 'stroke-width':sw * 1.15, 'stroke-linecap':'round'})); break;
+    default:
+      g.append(sv('circle', {r:r*.88, fill:'#06182c80', stroke:color, 'stroke-width':sw, 'stroke-dasharray': r * .5 + ' ' + r * .38}), sv('text', {x:0, y:r*.34, 'text-anchor':'middle', 'font-family':'Rajdhani,Arial,sans-serif', 'font-weight':'700', 'font-size':(r * 1.05).toFixed(1), fill:color, text:'?'}));
+  }
+  return g;
+}
+const stateColor = (st, base) => st === 'awaiting_approval' ? '#ffc46a' : st === 'failed' ? '#ff8a5c' : st === 'offline' ? '#8da0b2' : (st === 'none' || st === 'unknown') ? '#8aa8c0' : (base || '#62cfff');
+const ageOf = cur => cur ? Math.max(0, nowFn() - cur.ms) : null;
+
+/* ---------- HUD instruments ---------- */
+function renderKpis(sum){
+  const noRep = !sum.hasData;
+  const items = [
+    [String(sum.registered), 'registered', 'Registered agents', false, ''],
+    [sum.verifiedCount + ' of ' + sum.registered, 'verified', 'Agents verified (of listed)', false, 'minor'],
+    [noRep ? 'No reports' : sum.reportingCount + ' of ' + sum.registered, 'reporting', 'Agents reporting (last 24 h)', noRep, ''],
+    [noRep ? 'No data' : String(sum.workingCount), 'working', 'Reported working', noRep, ''],
+    [noRep ? 'No data' : String(sum.approvals.length), 'approvals', 'Approvals pending', noRep, sum.approvals.length ? 'alert' : ''],
+    [sum.cost.hasApi ? eur(sum.cost.apiEur) : 'No cost data', 'API cost today', 'API cost today', !sum.cost.hasApi, 'minor'],
+    ['Not connected', 'system health', 'System health telemetry', true, 'minor']
+  ];
+  const k = $('kpis'); k.replaceChildren();
+  for (const [v, short, key, nd, cls] of items) k.append(el('div', {cls:'kpi' + (cls ? ' ' + cls : ''), 'data-kpi':key, title:key}, el('b', {cls: nd ? 'nodata' : null, text:v}), el('span', {text:short})));
+}
+let lastOkMs = null;
+function renderFeed(){
+  const box = $('feedLine'); box.replaceChildren();
+  if (!pubInfo) { box.append(el('span', {cls:'pulsedot none', 'aria-hidden':'true'}), document.createTextNode('No status feed received yet. Every agent is Unknown.')); return; }
+  const gen = pubInfo.generated ? Date.parse(pubInfo.generated) : null, stale = gen !== null && nowFn() - gen > FEED_STALE_MS;
+  box.append(el('div', null, el('span', {cls:'pulsedot' + (stale ? ' stale' : ''), 'aria-hidden':'true'}), el('b', {text: stale ? 'Feed stale' : 'Feed live'})));
+  if (gen !== null) box.append(el('div', null, 'Feed generated ', el('b', {text:A.formatNicosia(gen, 'datetime')})));
+  if (lastOkMs) box.append(el('div', null, 'Last successful update ', el('b', {text:A.formatNicosia(lastOkMs, 'clock') + ' ' + A.tzLabel(lastOkMs)}), document.createTextNode(' (' + FXH.age(nowFn() - lastOkMs) + ')')));
+  box.append(el('div', {cls:'hud-note', text:'Source: restricted public status feed. Times are Europe/Nicosia.'}));
+}
+function renderKey(){
+  const ul = $('keyList'); if (ul.childElementCount) return;
+  for (const [s, label] of SHAPE_KEY) {
+    const sv0 = sv('svg', {viewBox:'-12 -12 24 24', 'aria-hidden':'true'}); sv0.append(glyph(s === 'prov' ? 'none' : s, 9, stateColor(s === 'prov' ? 'none' : s), s === 'prov'));
+    ul.append(el('li', null, el('span', {text:label}), sv0));
+  }
+}
+function renderActivity(){
+  const box = $('activity'); box.replaceChildren();
+  $('actTitle').querySelector('em').textContent = pubInfo ? 'restricted view' : 'not connected';
+  const recent = store.events.slice(0, 6);
+  if (!recent.length) { box.append(el('p', {cls:'empty', text:'No agent reports available. Not connected.'})); return; }
+  const ul = el('ul', {cls:'rows'});
+  for (const e of recent) {
+    const a = agentByKey(e.agent_key);
+    ul.append(el('li', null,
+      el('span', {cls:'when', text:A.formatNicosia(e.ms, 'time')}),
+      el('span', {cls:'what'}, el('b', {text:a.name}), el('span', null, statusNode(e), document.createTextNode(e.task ? ', ' + e.task : '')))));
+  }
+  box.append(ul);
+}
+function renderApprovals(sum){
+  const box = $('approvals'); box.replaceChildren();
+  $('apprCount').textContent = sum.hasData ? sum.approvals.length + ' pending' : 'no data';
+  if (!sum.approvals.length) { box.append(el('p', {cls:'empty', text: sum.hasData ? 'No agent is currently reporting awaiting approval.' : 'No approval requests reported.'})); return; }
+  const ul = el('ul', {cls:'rows'});
+  for (const ap of sum.approvals) {
+    ul.append(el('li', null,
+      el('span', {cls:'when', text:A.formatNicosia(ap.event.ms, 'time')}),
+      el('span', {cls:'what'}, el('b', {text:ap.agent.name}), el('span', {text: ap.detail ? ap.detail.summary + (ap.detail.reference ? ' (' + ap.detail.reference + ')' : '') : 'Details are not published'}))));
+  }
+  box.append(ul);
+  box.append(el('p', {cls:'empty', text:'Display only. Decisions are made outside this dashboard.'}));
+}
+function segRing(st, sum){
+  const id = st.stream.id, col = st.stream.color;
+  const list = id === '03' ? sum.agents : sum.agents.filter(x => x.agent.stream === id);
+  const n = Math.min(list.length, 12), svg = sv('svg', {class:'sring', viewBox:'0 0 30 30', 'aria-hidden':'true'});
+  if (!n) { svg.append(sv('circle', {cx:15, cy:15, r:11, fill:'none', stroke:col, 'stroke-opacity':'.45', 'stroke-dasharray':'2 3', 'stroke-width':'2'})); return svg; }
+  const gap = n > 1 ? 14 : 0, span = 360 / n;
+  list.slice(0, n).forEach((x, i) => {
+    const a0 = (-90 + i * span + gap / 2) * Math.PI / 180, a1 = (-90 + (i + 1) * span - gap / 2) * Math.PI / 180;
+    const p = a => (15 + 11 * Math.cos(a)).toFixed(2) + ' ' + (15 + 11 * Math.sin(a)).toFixed(2);
+    const stt = x.current ? x.current.status : 'none';
+    svg.append(sv('path', {d:`M${p(a0)} A11 11 0 ${(a1 - a0) > Math.PI ? 1 : 0} 1 ${p(a1)}`, fill:'none', stroke:stateColor(stt, col), 'stroke-width':'3', 'stroke-linecap':'round', 'stroke-opacity': stt === 'none' ? '.3' : '1', 'stroke-dasharray': stt === 'none' ? '2 2.5' : null}));
+  });
+  return svg;
+}
+function renderStreams(sum){
+  const ul = $('streamStatus'); ul.replaceChildren();
+  for (const st of sum.streams) {
+    let txt;
+    if (st.stream.id === '03') txt = 'Home of ' + st.homed + ' registered agents';
+    else if (!st.operating) txt = 'No registered agent';
+    else if (!st.reporting) txt = st.operating + ' registered, status unknown';
+    else txt = st.reporting + ' of ' + st.operating + ' reporting' + (st.statuses.includes('failed') ? ', failure reported' : '');
+    ul.append(el('li', null, el('span', {cls:'ringcell'}, segRing(st, sum), el('span', {text:st.stream.id + ' ' + st.stream.name})), el('span', {cls:'v', text:txt})));
+  }
+}
+function renderConnections(){
+  const ul = $('connections'); ul.replaceChildren();
+  for (const n of ['Agent services', 'GitHub integration', 'AI providers', 'Database', 'Automations', 'External APIs'])
+    ul.append(el('li', null, el('span', {text:n}), el('span', {cls:'v', text: n === 'Agent services' && pubInfo ? 'ACC service, restricted view' : 'Not connected'})));
+}
+function renderExceptions(){
+  $('excCount').textContent = 'not published';
+  const box = $('exceptionsShort'); box.replaceChildren();
+  box.append(el('p', {cls:'empty', text:'Routing and data exceptions are reviewed privately and are not published in this view.'}));
+}
+
+/* ---------- Orbital SVG ---------- */
+const C = {x:600, y:400}, R = 322, NR = 104, SU = NR / 100;
+const ANGLES = {'01':-90,'02':-30,'03':30,'04':90,'05':150,'06':210};
+const ORDER = ['01','02','03','04','05','06'];
+const EARTH_R = 136, DISC_R = 108, GLOBE_R = 392;           // core ring / identity disc / the large three-dimensional Earth
+const CONTENT = {x:196, y:-62, w:808, h:924}, CONTENT_M = {x:210, y:-62, w:780, h:924};
+const PHOTO = {'01':[112,68],'02':[112,50],'03':[112,65],'04':[112,46],'05':[112,65],'06':[112,28]};   // source crop sizes of assets/node-XX.jpg
+function pos(id){ const a = ANGLES[id] * Math.PI / 180; return {x: C.x + R*Math.cos(a), y: C.y + R*Math.sin(a)}; }
+function shortName(n){
+  const clean = n.replace(/\s*\([^)]*\)/g, '').trim(), w = clean.split(' '), out = [''];
+  for (const x of w) { const cur = out[out.length - 1]; if ((cur + ' ' + x).trim().length > 14 && cur) out.push(x); else out[out.length - 1] = (cur + ' ' + x).trim(); }
+  if (out.length > 2) { out.length = 2; out[1] = out[1].slice(0, 13) + '\u2026'; }
+  return out;
+}
+let orbitBuilt = false;
+const sats = new Map(), pips = new Map(), reveals = new Map(), plates = {}, particles = [];
+
+
+/* Stream identities: every stream has its own silhouette, outline and animated accent. Shapes are drawn in a 100-unit design space and scaled by SU. */
+function roundPoly(pts, r){
+  const n = pts.length; let d = '';
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i + n - 1) % n], p1 = pts[i], p2 = pts[(i + 1) % n];
+    const v1 = [p0[0] - p1[0], p0[1] - p1[1]], v2 = [p2[0] - p1[0], p2[1] - p1[1]], l1 = Math.hypot(v1[0], v1[1]), l2 = Math.hypot(v2[0], v2[1]), rr = Math.min(r, l1 / 2, l2 / 2);
+    const a = [p1[0] + v1[0] / l1 * rr, p1[1] + v1[1] / l1 * rr], b = [p1[0] + v2[0] / l2 * rr, p1[1] + v2[1] / l2 * rr];
+    d += (i ? 'L' : 'M') + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1) + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+  }
+  return d + 'Z';
+}
+const superPts = (a, n) => Array.from({length:64}, (_, i) => { const t = i / 64 * Math.PI * 2, c = Math.cos(t), sn = Math.sin(t); return [Math.sign(c) * Math.pow(Math.abs(c), 2 / n) * a, Math.sign(sn) * Math.pow(Math.abs(sn), 2 / n) * a]; });
+const SHAPES = {
+  '01': {top:-104, r:16, pts:[[0,-104],[62,-84],[110,-24],[96,10],[96,60],[60,98],[0,106],[-60,98],[-96,60],[-96,10],[-110,-24],[-62,-84]]},     // swept shield: nose and wings
+  '02': {top:-94, r:12, pts:[[-108,0],[-54,-94],[54,-94],[108,0],[54,94],[-54,94]]},                                                        // industrial hexagon
+  '03': {top:-104, r:10, pts:[[-46,-104],[46,-104],[104,-46],[104,46],[46,104],[-46,104],[-104,46],[-104,-46]]},                            // circuit-chip octagon
+  '04': {top:-86, r:12, pts:[[-100,-86],[100,-86],[100,8],[88,52],[52,88],[0,110],[-52,88],[-88,52],[-100,8]]},                             // forged heater shield
+  '05': {top:-104, r:3, pts:superPts(104, 4)},                                                                                               // radar squircle
+  '06': {top:-110, r:12, pts:[[0,-110],[98,-44],[98,70],[78,92],[-78,92],[-98,70],[-98,-44]]}                                               // launch pentagon
+};
+function shapeD(id, p, grow){ const sh = SHAPES[id], k = SU * (grow || 1); return roundPoly(sh.pts.map(q => [p.x + q[0] * k, p.y + q[1] * k]), sh.r * k); }
+function ornaments(id, p, col){
+  const k = SU, o = [], X = v => p.x + v * k, Y = v => p.y + v * k, ln = (x1, y1, x2, y2, cls, w, op) => sv('line', {x1:X(x1), y1:Y(y1), x2:X(x2), y2:Y(y2), stroke:col, 'stroke-width':w || 2, 'stroke-opacity':op || .8, 'stroke-linecap':'round', class:cls || null});
+  const dot = (x, y, r, op) => sv('circle', {cx:X(x), cy:Y(y), r:r * k, fill:col, 'fill-opacity':op || .95});
+  if (id === '01') {            // contrails off the wing tips, a heading tick on the nose
+    for (const sg of [-1, 1]) {
+      o.push(sv('path', {d:`M${X(sg * 112)} ${Y(-26)} Q${X(sg * 150)} ${Y(-6)} ${X(sg * 168)} ${Y(34)}`, fill:'none', stroke:col, 'stroke-width':2.2, 'stroke-opacity':.75, 'stroke-dasharray':'10 7', class:'dash', 'stroke-linecap':'round'}));
+      o.push(sv('path', {d:`M${X(sg * 100)} ${Y(-6)} Q${X(sg * 132)} ${Y(14)} ${X(sg * 146)} ${Y(46)}`, fill:'none', stroke:col, 'stroke-width':1.4, 'stroke-opacity':.5, 'stroke-dasharray':'4 8', class:'dash'}));
+      o.push(dot(sg * 168, 34, 3.4));
+    }
+    o.push(sv('path', {d:`M${X(-14)} ${Y(-124)} L${X(0)} ${Y(-136)} L${X(14)} ${Y(-124)}`, fill:'none', stroke:col, 'stroke-width':2.4, 'stroke-linecap':'round', 'stroke-linejoin':'round', class:'chev'}));
+  } else if (id === '02') {     // bolted plates and a counter-running inner contour
+    for (const q of SHAPES['02'].pts) o.push(dot(q[0] * 1.08, q[1] * 1.08, 4.6));
+    o.push(sv('path', {d:shapeD('02', p, .82), fill:'none', stroke:col, 'stroke-width':1.4, 'stroke-opacity':.55, 'stroke-dasharray':'8 8', class:'dash'}));
+    for (const sg of [-1, 1]) o.push(ln(sg * 120, -18, sg * 140, -18, null, 2.2, .7), ln(sg * 120, 18, sg * 140, 18, null, 2.2, .7));
+  } else if (id === '03') {     // circuit traces ending in pads
+    const tr = [[-24, -104, -24, -134], [24, -104, 24, -122], [104, -22, 138, -22], [104, 22, 126, 22], [-24, 104, -24, 134], [24, 104, 24, 122], [-104, -22, -138, -22], [-104, 22, -126, 22]];
+    for (const t of tr) { o.push(ln(t[0], t[1], t[2], t[3], null, 2.2, .75)); o.push(dot(t[2], t[3], 3.6)); }
+    for (const q of [[-78, -78], [78, -78], [78, 78], [-78, 78]]) o.push(sv('rect', {x:X(q[0] * 1.1 - 6), y:Y(q[1] * 1.1 - 6), width:12 * k, height:12 * k, fill:'none', stroke:col, 'stroke-width':1.6, 'stroke-opacity':.8}));
+  } else if (id === '04') {     // rivets along the crest and ember flames under the point
+    for (let i = -4; i <= 4; i++) o.push(dot(i * 20, -86 * 1 - 12, 3));
+    for (const [dx, h, ph] of [[-12, 20, 0], [0, 26, .4], [12, 18, .8]]) o.push(sv('path', {d:`M${X(dx - 7)} ${Y(111)} Q${X(dx - 2)} ${Y(111 + h * .5)} ${X(dx)} ${Y(111 + h)} Q${X(dx + 2)} ${Y(111 + h * .5)} ${X(dx + 7)} ${Y(111)} Z`, fill:col, 'fill-opacity':.75, class:'flame', style:'animation-delay:' + ph + 's'}));
+  } else if (id === '05') {     // radar: a sweeping arc, compass ticks and a crosshair
+    const rr = (NR + 28), circ = 2 * Math.PI * rr;
+    o.push(sv('circle', {cx:p.x, cy:p.y, r:rr, fill:'none', stroke:col, 'stroke-width':2.6, 'stroke-opacity':.9, 'stroke-linecap':'round', 'stroke-dasharray':(circ * .13).toFixed(0) + ' ' + (circ * .87).toFixed(0), class:'sweep', style:'--len:' + circ.toFixed(0)}));
+    o.push(sv('circle', {cx:p.x, cy:p.y, r:rr, fill:'none', stroke:col, 'stroke-width':1, 'stroke-opacity':.28}));
+    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, r1 = rr - (i % 2 ? 5 : 10), r2 = rr + 2; o.push(sv('line', {x1:p.x + Math.cos(a) * r1, y1:p.y + Math.sin(a) * r1, x2:p.x + Math.cos(a) * r2, y2:p.y + Math.sin(a) * r2, stroke:col, 'stroke-width':1.4, 'stroke-opacity':.7})); }
+  } else if (id === '06') {     // launch chevrons climbing both flanks
+    for (const sg of [-1, 1]) for (let i = 0; i < 3; i++) o.push(sv('path', {d:`M${X(sg * 118 - 12)} ${Y(30 - i * 22 + 8)} L${X(sg * 118)} ${Y(30 - i * 22 - 6)} L${X(sg * 118 + 12)} ${Y(30 - i * 22 + 8)}`, fill:'none', stroke:col, 'stroke-width':2.6, 'stroke-linecap':'round', 'stroke-linejoin':'round', class:'chev', style:'animation-delay:' + (i * .3) + 's'}));
+    o.push(dot(0, -128, 3.4), ln(0, -118, 0, -112, null, 2, .8));
+  }
+  return o;
+}
+
+function buildOrbit(){
+  const svg = $('orbit');
+  svg.replaceChildren(); sats.clear(); pips.clear(); reveals.clear(); particles.length = 0;
+  svg.append(sv('title', {text:'FORGEDTITANIUM streams 00 to 06'}));
+  const defs = sv('defs');
+  const flt = (id, sd) => defs.append(sv('filter', {id, x:'-60%', y:'-60%', width:'220%', height:'220%'}, sv('feGaussianBlur', {stdDeviation:sd, result:'b'}), sv('feMerge', {}, sv('feMergeNode', {in:'b'}), sv('feMergeNode', {in:'SourceGraphic'}))));
+  flt('glow', '7'); flt('glowS', '3');
+  const disc = sv('radialGradient', {id:'coreDisc', cx:'50%', cy:'42%', r:'62%'});
+  disc.append(sv('stop',{offset:'0%','stop-color':'#1a58b0','stop-opacity':'.72'}), sv('stop',{offset:'100%','stop-color':'#020a1a','stop-opacity':'.86'}));
+  defs.append(disc);
+  const fade = sv('linearGradient', {id:'nodeFade', x1:'0', y1:'0', x2:'0', y2:'1'});
+  fade.append(sv('stop',{offset:'40%','stop-color':'#010812','stop-opacity':'0'}), sv('stop',{offset:'78%','stop-color':'#010812','stop-opacity':'.86'}), sv('stop',{offset:'100%','stop-color':'#010812','stop-opacity':'.96'}));
+  defs.append(fade);
+  const both = sv('linearGradient', {id:'fadeBoth', x1:'0', y1:'0', x2:'0', y2:'1'});
+  both.append(sv('stop',{offset:'0%','stop-color':'#000'}), sv('stop',{offset:'18%','stop-color':'#fff'}), sv('stop',{offset:'66%','stop-color':'#fff'}), sv('stop',{offset:'100%','stop-color':'#000'}));
+  defs.append(both);
+  for (const s of A.STREAMS.slice(1)) {
+    const p = pos(s.id), pw = PHOTO[s.id], k = 1.3 * SU, w = pw[0] * k, h = pw[1] * k, x = p.x - w / 2, y = p.y - 46 * k;
+    const g = sv('radialGradient', {id:'nf'+s.id, cx:'50%', cy:'30%', r:'75%'});
+    g.append(sv('stop',{offset:'0%','stop-color':s.color,'stop-opacity':'.5'}), sv('stop',{offset:'62%','stop-color':'#06142a','stop-opacity':'.96'}), sv('stop',{offset:'100%','stop-color':'#020812'}));
+    defs.append(g);
+    defs.append(sv('clipPath', {id:'nc'+s.id}, sv('path', {d:shapeD(s.id, p, .965)})));
+    defs.append(sv('mask', {id:'nm'+s.id, maskUnits:'userSpaceOnUse', x, y, width:w, height:h}, sv('rect', {x, y, width:w, height:h, fill:'url(#fadeBoth)'})));
+  }
+  svg.append(defs);
+
+  // perspective orbit rings (decorative)
+  const rings = sv('g', {'aria-hidden':'true', fill:'none'});
+  rings.append(sv('ellipse', {class:'spin', cx:C.x, cy:C.y, rx:R+50, ry:R-70, stroke:'#3aa8ff', 'stroke-opacity':'.2', 'stroke-dasharray':'1 10', 'stroke-width':'2.4'}));
+  rings.append(sv('ellipse', {class:'spin rev', cx:C.x, cy:C.y, rx:R-80, ry:R+36, stroke:'#9b6bff', 'stroke-opacity':'.2', 'stroke-dasharray':'1 12', 'stroke-width':'2.4'}));
+  svg.append(rings);
+
+  // hub-and-spoke: every stream connects directly to 00. There is no stream-to-stream link.
+  const spokes = sv('g', {id:'links', 'aria-hidden':'true'});
+  for (const id of ORDER) {
+    const p = pos(id), c = streamOf(id).color, dist = Math.hypot(p.x - C.x, p.y - C.y), ux = (p.x - C.x)/dist, uy = (p.y - C.y)/dist;
+    const hx = C.x + ux * (EARTH_R + 28), hy = C.y + uy * (EARTH_R + 28), nx = p.x - ux * (NR + 12), ny = p.y - uy * (NR + 12);
+    const gid = 'lg' + id, grad = sv('linearGradient', {id:gid, gradientUnits:'userSpaceOnUse', x1:hx.toFixed(1), y1:hy.toFixed(1), x2:nx.toFixed(1), y2:ny.toFixed(1)});
+    grad.append(sv('stop', {offset:'0%', 'stop-color':'#8fe6ff'}), sv('stop', {offset:'100%', 'stop-color':c}));
+    svg.querySelector('defs').append(grad);
+    const d = `M${hx.toFixed(1)} ${hy.toFixed(1)} L${nx.toFixed(1)} ${ny.toFixed(1)}`;
+    const g = sv('g', {class:'link', 'data-stream':id});
+    g.append(sv('path', {d, fill:'none', stroke:'#010812', 'stroke-width':'11', 'stroke-opacity':'.62', 'stroke-linecap':'round'}));
+    g.append(sv('path', {d, fill:'none', stroke:'url(#'+gid+')', 'stroke-width':'14', 'stroke-opacity':'.28', 'stroke-linecap':'round', filter:'url(#glow)'}));
+    g.append(sv('path', {id:'link'+id, class:'linkcore', d, fill:'none', stroke:'url(#'+gid+')', 'stroke-width':'4.6', 'stroke-linecap':'round'}));
+    g.append(sv('path', {class:'linkflow', d, fill:'none', stroke:'#ffffff', 'stroke-opacity':'.85', 'stroke-width':'1.8', 'stroke-dasharray':'2 11', 'stroke-linecap':'round'}));
+    g.append(sv('circle', {cx:hx.toFixed(1), cy:hy.toFixed(1), r:5, fill:'#8fe6ff', filter:'url(#glowS)'}), sv('circle', {cx:nx.toFixed(1), cy:ny.toFixed(1), r:4.4, fill:c, filter:'url(#glowS)'}));
+    spokes.append(g);
+  }
+  svg.append(spokes);
+
+  // core (00): the three-dimensional Earth sits behind this SVG; the holographic hub carries the identity text
+  const hubDefs = svg.querySelector('defs');
+  const bloom = sv('radialGradient', {id:'hubBloom'}); bloom.append(sv('stop', {offset:'0%', 'stop-color':'#4fd0ff', 'stop-opacity':'.5'}), sv('stop', {offset:'55%', 'stop-color':'#2a7bff', 'stop-opacity':'.2'}), sv('stop', {offset:'100%', 'stop-color':'#2a7bff', 'stop-opacity':'0'}));
+  const lens = sv('radialGradient', {id:'hubLens'}); lens.append(sv('stop', {offset:'0%', 'stop-color':'#7fe4ff', 'stop-opacity':'0'}), sv('stop', {offset:'35%', 'stop-color':'#7fe4ff', 'stop-opacity':'.34'}), sv('stop', {offset:'100%', 'stop-color':'#4fa8ff', 'stop-opacity':'0'}));
+  const rim = sv('linearGradient', {id:'hubRim', x1:'0', y1:'0', x2:'1', y2:'1'}); rim.append(sv('stop', {offset:'0%', 'stop-color':'#e8fbff'}), sv('stop', {offset:'45%', 'stop-color':'#4fc6ff'}), sv('stop', {offset:'100%', 'stop-color':'#9b6bff'}));
+  const scan = sv('pattern', {id:'hubScan', width:'6', height:'4', patternUnits:'userSpaceOnUse'}, sv('rect', {width:'6', height:'1', fill:'#9fe8ff', 'fill-opacity':'.1'}));
+  hubDefs.append(bloom, lens, rim, scan, sv('clipPath', {id:'hubClip'}, sv('circle', {cx:C.x, cy:C.y, r:DISC_R - 2})));
+  const rayG = sv('radialGradient', {id:'hubRay', gradientUnits:'userSpaceOnUse', cx:C.x, cy:C.y, r:EARTH_R + 300});
+  rayG.append(sv('stop', {offset:'30%', 'stop-color':'#7fe4ff', 'stop-opacity':'.34'}), sv('stop', {offset:'100%', 'stop-color':'#7fe4ff', 'stop-opacity':'0'})); hubDefs.append(rayG);
+  const rays = sv('g', {class:'rays', 'aria-hidden':'true', 'pointer-events':'none'});
+  for (let i = 0; i < 12; i++) { const an = (i / 12 * 360 + 15) * Math.PI / 180, w0 = (i % 2 ? .035 : .06), L = EARTH_R + 300; rays.append(sv('path', {d:`M${C.x + Math.cos(an - w0) * EARTH_R} ${C.y + Math.sin(an - w0) * EARTH_R} L${C.x + Math.cos(an) * L} ${C.y + Math.sin(an) * L} L${C.x + Math.cos(an + w0) * EARTH_R} ${C.y + Math.sin(an + w0) * EARTH_R} Z`, fill:'url(#hubRay)'})); }
+  svg.insertBefore(rays, svg.querySelector('#links'));
+  const coreG = sv('g', {class:'node', id:'node00', tabindex:'0', role:'button', 'aria-label':'00 FORGEDTITANIUM company overview', 'data-id':'00'});
+  coreG.append(sv('circle', {cx:C.x, cy:C.y, r:EARTH_R + 96, fill:'url(#hubBloom)', 'pointer-events':'none', 'aria-hidden':'true'}));
+  coreG.append(sv('path', {d:`M${C.x - EARTH_R - 34} ${C.y} a${EARTH_R + 34} ${EARTH_R + 34} 0 1 0 ${(EARTH_R + 34) * 2} 0 a${EARTH_R + 34} ${EARTH_R + 34} 0 1 0 ${-(EARTH_R + 34) * 2} 0 Z M${C.x - EARTH_R - 4} ${C.y} a${EARTH_R + 4} ${EARTH_R + 4} 0 1 0 ${(EARTH_R + 4) * 2} 0 a${EARTH_R + 4} ${EARTH_R + 4} 0 1 0 ${-(EARTH_R + 4) * 2} 0 Z`, 'fill-rule':'evenodd', fill:'url(#hubLens)', 'pointer-events':'none', 'aria-hidden':'true'}));
+  coreG.append(sv('circle', {class:'breathe', cx:C.x, cy:C.y, r:EARTH_R + 9, fill:'none', stroke:'#51ccff', 'stroke-width':'3', filter:'url(#glow)'}));
+  coreG.append(sv('circle', {class:'halo', cx:C.x, cy:C.y, r:EARTH_R, fill:'none', stroke:'url(#hubRim)', 'stroke-width':'4.4', opacity:'.95'}));
+  coreG.append(sv('circle', {class:'dash slow', cx:C.x, cy:C.y, r:EARTH_R + 18, fill:'none', stroke:'#62cfff', 'stroke-opacity':'.85', 'stroke-width':'3', 'stroke-dasharray':'150 40 30 40', 'aria-hidden':'true'}));
+  coreG.append(sv('circle', {class:'dash slow rev', cx:C.x, cy:C.y, r:EARTH_R + 27, fill:'none', stroke:'#a76bff', 'stroke-opacity':'.75', 'stroke-width':'2', 'stroke-dasharray':'70 110', 'aria-hidden':'true'}));
+  let ticks = '';                       // bezel: fine ticks every 5 degrees, long ticks every 30
+  for (let i = 0; i < 72; i++) { const an = i / 72 * Math.PI * 2, r1 = EARTH_R + (i % 6 ? 5 : 3), r2 = EARTH_R + (i % 6 ? 9 : 14); ticks += `M${(C.x + Math.cos(an) * r1).toFixed(1)} ${(C.y + Math.sin(an) * r1).toFixed(1)}L${(C.x + Math.cos(an) * r2).toFixed(1)} ${(C.y + Math.sin(an) * r2).toFixed(1)}`; }
+  coreG.append(sv('path', {d:ticks, stroke:'#9fe8ff', 'stroke-opacity':'.75', 'stroke-width':'1.4', fill:'none', 'aria-hidden':'true'}));
+  coreG.append(sv('circle', {cx:C.x, cy:C.y, r:DISC_R + 12, fill:'none', stroke:'#62cfff', 'stroke-opacity':'.32', 'stroke-width':'8', filter:'url(#glowS)'}));
+  coreG.append(sv('circle', {class:'dash', cx:C.x, cy:C.y, r:DISC_R + 8, fill:'none', stroke:'#62cfff', 'stroke-opacity':'.6', 'stroke-width':'1.4', 'stroke-dasharray':'3 5'}));
+  coreG.append(sv('circle', {cx:C.x, cy:C.y, r:DISC_R, fill:'url(#coreDisc)', stroke:'url(#hubRim)', 'stroke-width':'4', filter:'url(#glowS)'}));
+  coreG.append(sv('circle', {cx:C.x, cy:C.y, r:DISC_R - 2, fill:'url(#hubScan)', 'pointer-events':'none', 'aria-hidden':'true'}));
+  coreG.append(sv('path', {d:`M${C.x - DISC_R * .78} ${C.y - DISC_R * .52} A${DISC_R * .94} ${DISC_R * .94} 0 0 1 ${C.x + DISC_R * .5} ${C.y - DISC_R * .8}`, fill:'none', stroke:'#fff', 'stroke-opacity':'.55', 'stroke-width':'2.4', 'stroke-linecap':'round', filter:'url(#glowS)', class:'breathe', 'aria-hidden':'true'}));
+  for (const [ga, gs] of [[-45, 1], [135, .8], [-135, .65], [45, .9]]) {   // projector glints on the bezel
+    const an = ga * Math.PI / 180, gx = C.x + Math.cos(an) * (EARTH_R + 4), gy = C.y + Math.sin(an) * (EARTH_R + 4), L = 17 * gs;
+    coreG.append(sv('path', {d:`M${gx - L} ${gy}L${gx + L} ${gy}M${gx} ${gy - L}L${gx} ${gy + L}`, stroke:'#fff', 'stroke-opacity':'.85', 'stroke-width':'2', 'stroke-linecap':'round', 'aria-hidden':'true'}));
+  }
+  coreG.append(sv('path', {transform:`translate(${C.x} ${C.y - 80}) scale(1.2)`, d:'M-10 -20 h23 l-3.8 5.4 h-13 v6.1 h10.7 l-3.8 5.4 h-6.9 v10.7 h-6.1 z', fill:'#e8f6ff', 'aria-hidden':'true'}));
+  coreG.append(sv('text', {class:'core-num', x:C.x, y:C.y + 2, 'text-anchor':'middle', fill:'#62cfff', text:'00'}));
+  coreG.append(sv('text', {class:'core-name', x:C.x, y:C.y + 28, 'text-anchor':'middle', text:'FORGEDTITANIUM'}));
+  coreG.append(sv('text', {class:'core-sub', x:C.x, y:C.y + 45, 'text-anchor':'middle', text:'MASTER AGENT'}));
+  coreG.append(sv('text', {class:'core-st', id:'coreStatus', x:C.x, y:C.y + 62, 'text-anchor':'middle', fill:'#8aa8c0'}));
+  coreG.append(sv('text', {class:'core-st', id:'coreTime', x:C.x, y:C.y + 76, 'text-anchor':'middle', fill:'#8aa8c0'}));
+  svg.append(coreG);
+
+  // stream nodes with cinematic imagery taken from the approved reference
+  const revealLayer = sv('g', {id:'satLayer'});
+  for (const s of A.STREAMS.slice(1)) {
+    const p = pos(s.id), pw = PHOTO[s.id], k = 1.3 * SU, w = pw[0] * k, h = pw[1] * k, x = p.x - w / 2, y = p.y - 46 * k, sh = SHAPES[s.id];
+    const g = sv('g', {class:'node', id:'node'+s.id, tabindex:'0', role:'button', 'aria-label':'Open stream ' + s.id + ' ' + s.name, 'data-id':s.id, 'data-shape':s.id});
+    g.append(sv('path', {class:'halo', d:shapeD(s.id, p, 1.07), fill:'none', stroke:s.color, 'stroke-width':'5', opacity:'.8', filter:'url(#glow)'}));
+    g.append(sv('path', {class:'dash', d:shapeD(s.id, p, 1.14), fill:'none', stroke:s.color, 'stroke-opacity':'.6', 'stroke-width':'1.8', 'stroke-dasharray':'12 9', 'aria-hidden':'true'}));
+    const orn = sv('g', {class:'orn', 'aria-hidden':'true', 'pointer-events':'none'}); ornaments(s.id, p, s.color).forEach(n => orn.append(n)); g.append(orn);
+    g.append(sv('path', {class:'ring', 'data-cx':p.x.toFixed(1), 'data-cy':p.y.toFixed(1), d:shapeD(s.id, p, 1), fill:'url(#nf'+s.id+')', stroke:s.color, 'stroke-width':'3.6'}));
+    const scene = sv('g', {'clip-path':'url(#nc'+s.id+')', 'aria-hidden':'true'});
+    scene.append(sv('image', {href:'assets/node-' + s.id + '.jpg', x, y, width:w, height:h, preserveAspectRatio:'none', mask:'url(#nm'+s.id+')'}));
+    scene.append(sv('rect', {x:p.x-NR*1.1, y:p.y-NR*1.1, width:NR*2.2, height:NR*2.2, fill:'url(#nodeFade)'}));
+    g.append(scene);
+    g.append(sv('path', {d:shapeD(s.id, p, .9), fill:'none', stroke:s.color, 'stroke-opacity':'.4', 'stroke-width':'1.2', 'aria-hidden':'true'}));
+    const words = s.name.toUpperCase().split(' ');
+    const lines = s.name.length > 13 ? [words.slice(0, Math.ceil(words.length/2)).join(' '), words.slice(Math.ceil(words.length/2)).join(' ')] : [words.join(' ')];
+    lines.forEach((ln, i) => g.append(sv('text', {class:'nodename', x:p.x, y:p.y + 26 * SU + i*20, 'text-anchor':'middle', text:ln})));
+    g.append(sv('text', {class:'nodedata', id:'nd'+s.id, x:p.x, y:p.y + (lines.length > 1 ? 65 : 46) * SU, 'text-anchor':'middle'}));
+    const pip = sv('g', {class:'pips', 'aria-hidden':'true', transform:`translate(${p.x} ${p.y + 80 * SU})`}); g.append(pip); pips.set(s.id, pip);
+    const by = p.y + sh.top * SU;
+    g.append(sv('circle', {cx:p.x, cy:by, r:23, fill:'#04122a', stroke:s.color, 'stroke-width':'3', filter:'url(#glowS)'}));
+    g.append(sv('text', {class:'badge-num', x:p.x, y:by+8, 'text-anchor':'middle', text:s.id}));
+    svg.append(g);
+
+    // Level 2 reveal: sub-streams and the associated agents, shown when the stream is selected
+    const agents = A.REGISTER.filter(a => a.stream === s.id), left = p.x < C.x - 5 ? true : false, W = 330;
+    const perRow = 4, rows = Math.ceil(agents.length / perRow), H = 40 + s.sub.length * 23 + 18 + (agents.length ? 22 + rows * 82 : 26);
+    const px = left ? p.x - NR - 34 - W : p.x + NR + 34, py = Math.min(Math.max(p.y - H / 2, 16), 800 - H - 16);
+    plates[s.id] = {x:px, y:py, w:W, h:H, left};
+    const rv = sv('g', {class:'reveal', 'data-stream':s.id});
+    rv.append(sv('rect', {class:'plate', x:px, y:py, width:W, height:H, rx:6, stroke:s.color, 'aria-hidden':'true'}));
+    rv.append(sv('rect', {x:px, y:py, width:3, height:H, fill:s.color, 'aria-hidden':'true'}));
+    rv.append(sv('text', {class:'plate-head', x:px + 16, y:py + 25, fill:s.color, text:s.id + '  ' + s.name.toUpperCase() + '  LEVEL 2'}));
+    s.sub.forEach((item, i) => {
+      const t = item.label, ty = py + 52 + i * 23;
+      const tx = sv('text', {class:'sublabel sublink', x:px + 16, y:ty, tabindex:'0', role:'button', 'aria-label':'Open Level 2 item ' + t + ' in stream ' + s.id + ' ' + s.name, 'data-stream':s.id, 'data-sub':String(i)});
+      tx.addEventListener('click', () => openStream(s.id, true, i));
+      tx.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStream(s.id, true, i); } });
+      tx.append(sv('tspan', {class:'subnum', fill:s.color, text:String(i+1).padStart(2,'0') + '  '}));
+      tx.append(sv('tspan', {text: t.length > 38 ? t.slice(0, 37) + '…' : t}));
+      tx.append(sv('title', {text:t + (item.code ? ' (' + item.code + ')' : '') + ', ' + item.status}));
+      if (item.status !== 'corroborated') tx.setAttribute('opacity', '.8');
+      rv.append(tx);
+    });
+    const ay = py + 52 + s.sub.length * 23 + 12;
+    if (!agents.length) rv.append(sv('text', {class:'sublabel', x:px + 16, y:ay + 14, fill:'#9fb7cc', text: s.id === '03' ? 'Home of ' + A.REGISTER.length + ' registered agents (see their streams)' : 'No registered agent in this stream'}));
+    else {
+      rv.append(sv('text', {class:'plate-head', x:px + 16, y:ay + 8, fill:'#cfeaff', text:'AGENTS'}));
+      agents.forEach((a, i) => {
+        const col = i % perRow, row = Math.floor(i / perRow), ax = px + 48 + col * 78, ay2 = ay + 44 + row * 82;
+        const sat = sv('g', {class:'sat', tabindex:'0', role:'button', 'data-agent':A.agentKey(a), 'data-s':'none', 'aria-label':'View ' + a.name + ' detail'});
+        sat.append(sv('circle', {class:'satpulse', cx:ax, cy:ay2, r:17, fill:'none', stroke:s.color, 'stroke-width':'2'}));
+        const gh = sv('g', {class:'glyphhost', transform:`translate(${ax} ${ay2})`});
+        const ring = sv('circle', {class:'satring', cx:ax, cy:ay2, r:23, fill:'#031023', 'fill-opacity':'.7', stroke:s.color, 'stroke-width':'1.6', 'stroke-opacity':'.7'});
+        sat.append(ring, gh);
+        shortName(a.name).forEach((ln, li) => sat.append(sv('text', {class:'satname', x:ax, y:ay2 + 38 + li * 13, 'text-anchor':'middle', text:ln})));
+        sat.append(sv('title', {text:a.name}));
+        sat.addEventListener('click', e => { e.stopPropagation(); openAgent(A.agentKey(a)); });
+        sat.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAgent(A.agentKey(a)); } });
+        rv.append(sat);
+        sats.set(A.agentKey(a), {g:sat, host:gh, ring, stream:s.id, color:s.color, prov:!a.code});
+      });
+    }
+    revealLayer.append(rv); reveals.set(s.id, rv);
+  }
+  svg.append(revealLayer);
+
+  // Moving data exists only while a verified agent in that stream reports Working (see activeStreams). Otherwise nothing travels on the link.
+  const pl = sv('g', {id:'particleLayer', 'aria-hidden':'true', 'pointer-events':'none'});
+  const mk = (path, color, r, speed, off, stream) => {
+    if (!path || typeof path.getTotalLength !== 'function') return;
+    let len = 0; try { len = path.getTotalLength(); } catch (e) { return; }
+    if (!(len > 0)) return;
+    const el0 = sv('circle', {r, fill:color, filter:'url(#glowS)', opacity:'0'});
+    pl.append(el0); particles.push({el:el0, path, len, speed, off, stream});
+  };
+  svg.insertBefore(pl, revealLayer);
+  orbitBuilt = true;
+  for (const id of ORDER) for (let q = 0; q < 3; q++) mk(svg.querySelector('#link'+id), '#ffffff', 3, 46, q / 3, id);
+  svg.querySelectorAll('.node').forEach(n => {
+    n.addEventListener('click', () => openStream(n.dataset.id));
+    n.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStream(n.dataset.id); } });
+  });
+}
+
+/* Streams in which at least one verified agent has a current reported state of Working. A start with no completion for longer than the
+   feed's working timeout, a report older than that, a stale feed and a provisional agent all count as not working. */
+let activeStreams = {}, workTimeoutMs = 120 * 60000;
+function computeActive(sum){
+  const out = {}, now = nowFn();
+  if (pubInfo && pubInfo.generated && now - Date.parse(pubInfo.generated) > FEED_STALE_MS) return out;
+  for (const x of sum.agents) {
+    if (!x.agent.code || x.agent.verification !== 'verified' || !x.current || x.current.status !== 'working') continue;
+    if (now - x.current.ms > workTimeoutMs) continue;
+    out[x.agent.stream] = (out[x.agent.stream] || 0) + 1;
+  }
+  return out;
+}
+function stepParticles(t){
+  for (const p of particles) {
+    if (!activeStreams[p.stream]) { if (p.el.getAttribute('opacity') !== '0') p.el.setAttribute('opacity', '0'); continue; }
+    const u = (((p.off * p.len + (t / 1000) * p.speed) % p.len) + p.len) % p.len, q = p.path.getPointAtLength(p.len - u), k = Math.sin(Math.PI * u / p.len);   // from the stream towards 00
+    p.el.setAttribute('cx', q.x.toFixed(1)); p.el.setAttribute('cy', q.y.toFixed(1)); p.el.setAttribute('opacity', (.25 + .7 * k).toFixed(2));
+  }
+}
+
+function renderOrbitData(sum){
+  if (!orbitBuilt) buildOrbit();
+  const master = sum.agents.find(x => x.agent.master);
+  const cs = $('coreStatus'), ct = $('coreTime');
+  if (master && master.current) {
+    cs.textContent = STATUS_TEXT[master.current.status] + ' \u00b7 ' + FXH.age(nowFn() - master.current.ms);
+    cs.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--st-' + ({awaiting_approval:'awaiting'}[master.current.status] || master.current.status)).trim() || '#a9c6dc');
+    ct.textContent = A.formatNicosia(master.current.ms, 'time') + (pubInfo ? '' : ', not live');
+  } else {
+    cs.textContent = 'Status unknown: no report';
+    cs.setAttribute('fill', '#8aa8c0');
+    ct.textContent = 'No live connection';
+  }
+  for (const st of sum.streams) {
+    const t = $('nd' + st.stream.id);
+    if (st.stream.id === '03') t.textContent = st.homed + ' agents homed here';
+    else if (st.operating === 0) t.textContent = 'No registered agent';
+    else {
+      const latest = sum.agents.filter(x => x.agent.stream === st.stream.id && x.current).reduce((m, x) => Math.max(m, x.current.ms), 0);
+      t.textContent = st.operating + ' agent' + (st.operating > 1 ? 's' : '') + ', ' + (st.reporting ? st.reporting + ' reporting' : 'none reporting') + (latest ? ' \u00b7 ' + FXH.ageShort(nowFn() - latest) : '');
+    }
+  }
+  activeStreams = computeActive(sum);
+  for (const id of ORDER) {
+    document.getElementById('node' + id).classList.toggle('active-stream', !!activeStreams[id]);
+    document.querySelector('#links .link[data-stream="' + id + '"]').classList.toggle('live', !!activeStreams[id]);
+    const host = pips.get(id); host.replaceChildren();
+    const list = sum.agents.filter(x => x.agent.stream === id).slice(0, 5), step = 17, x0 = -(list.length - 1) * step / 2;
+    list.forEach((x, i) => { const st = x.current ? x.current.status : 'none'; const g = glyph(st, 5.4, stateColor(st, streamOf(id).color), !x.agent.code); g.setAttribute('transform', `translate(${x0 + i * step} 0)`); host.append(g); });
+  }
+  for (const x of sum.agents) {
+    const s = sats.get(A.agentKey(x.agent)); if (!s) continue;
+    const st = x.current ? x.current.status : 'none', col = stateColor(st, s.color);
+    s.g.setAttribute('data-s', st);
+    s.host.replaceChildren(glyph(st, 15, col, !x.agent.code));
+    s.ring.setAttribute('stroke-dasharray', x.current ? '' : '3 3');
+    s.g.querySelector('.satpulse').setAttribute('stroke', col);
+    s.g.querySelector('title').textContent = x.agent.name + (x.agent.code ? '' : ' (provisional)') + ', ' + (x.current ? STATUS_TEXT[st] + ', reported ' + A.formatNicosia(x.current.ms, 'time') : 'no report (Unknown)');
+  }
+}
+
+/* ---------- Agent dock ---------- */
+function renderAgents(sum){
+  const f = $('agentFilter').value, grid = $('agentGrid'); grid.replaceChildren();
+  $('agentsSummary').textContent = sum.registered + ' registered, ' + sum.reportingCount + ' reporting';
+  for (const x of sum.agents.filter(x => f === 'all' || x.agent.stream === f)) {
+    const a = x.agent, c = streamOf(a.stream).color, st = x.current ? x.current.status : 'none';
+    const orb = el('span', {cls:'orb', 'aria-hidden':'true'}), osv = sv('svg', {viewBox:'-20 -20 40 40'}); osv.append(glyph(st, 15, stateColor(st, c), !a.code)); orb.append(osv);
+    const ageMs = ageOf(x.current);
+    const b = el('button', {cls:'agent', type:'button', style:'--c:' + c, 'aria-label':'Open ' + a.name + ' command interface', 'data-agent':A.agentKey(a), 'data-s':st},
+      orb,
+      el('b', {text:a.name}),
+      el('small', null, dot(x.current), statusNode(x.current), document.createTextNode(x.current ? ', ' + A.formatNicosia(x.current.ms, 'time') : '')),
+      el('small', {cls:'id' + (a.code ? '' : ' unv'), text: a.code ? a.code : 'No verified code: ' + a.interim_id}),
+      el('small', null, verChip(a)),
+      el('small', {cls:'agefresh'}, document.createTextNode(x.current ? 'Reported ' + FXH.age(ageMs) : 'No report received')),
+      el('span', {cls:'fresh', 'aria-hidden':'true'}, el('i', {style:'width:' + (x.current ? Math.max(4, Math.round(100 * (1 - Math.min(ageMs, A.STALE_AFTER_MS) / A.STALE_AFTER_MS))) : 0) + '%'})));
+    b.addEventListener('click', () => openAgent(A.agentKey(a)));
+    grid.append(b);
+  }
+}
+
+/* ---------- Stream panel (Level 1) ---------- */
+let openStreamId = null, openSub = null;
+function openStream(id, focus, subIdx){
+  const s = streamOf(id), now = nowFn();
+  /* the periodic refresh re-opens the stream without an index: keep the Level 2 item the viewer chose, and drop it when another stream is chosen */
+  if (subIdx !== undefined) openSub = subIdx; else if (openStreamId !== id) openSub = null;
+  subIdx = openSub;
+  openStreamId = id; zoomTo(id); document.querySelector('.stagewrap').classList.add('focus');
+  document.querySelectorAll('#orbit .node').forEach(n => n.classList.toggle('active', n.dataset.id === id));
+  reveals.forEach((rv, k) => rv.classList.toggle('on', k === id));
+  $('panel').classList.toggle('right', id === '05' || id === '06');
+  $('panelTitle').textContent = s.id + ' ' + s.name;
+  $('panelSub').textContent = s.id === '00' ? 'Level 00, company overview' : 'Level 1, stream detail';
+  const body = $('panelBody'); body.replaceChildren(el('p', {text:s.note}));
+  if (s.id === '00') {
+    body.append(el('h3', {text:'Business streams'}));
+    const ol = el('ol'); for (const v of A.STREAMS.slice(1)) { const b = el('button', {cls:'agentlink', type:'button', text:v.id + ' ' + v.name}); b.addEventListener('click', () => openStream(v.id)); ol.append(el('li', null, b)); } body.append(ol);
+  } else {
+    body.append(el('h3', {text:'Level 2 register'}));
+    const ol = el('ol');
+    s.sub.forEach((v, i) => {
+      const pick = el('button', {cls:'sublink', type:'button', 'data-sub':String(i), 'aria-pressed':String(subIdx === i), text:v.label + (v.code ? ' (' + v.code + ')' : '')});
+      pick.addEventListener('click', () => openStream(id, false, i));
+      ol.append(el('li', null, pick, document.createTextNode(' '), el('span', {cls:'chip', 'data-sev': v.status === 'corroborated' ? 'ok' : 'info', text: v.status === 'corroborated' ? 'Corroborated ' + v.evidence : 'Provisional'})));
+    });
+    body.append(ol);
+    if (subIdx !== null && subIdx !== undefined && s.sub[subIdx]) {
+      const v = s.sub[subIdx];
+      const linked = A.REGISTER.filter(a => v.code && a.home === v.code);
+      const box = el('div', {cls:'subdetail', id:'subDetail'},
+        el('h3', {text:'Level 2: ' + v.label}),
+        el('p', {text: (v.status === 'corroborated' ? 'Corroborated by ' + v.evidence + '.' : 'Provisional: not yet corroborated by an approved organisational record.') + (v.code ? ' Code ' + v.code + '.' : ' No code recorded.')}));
+      if (linked.length) {
+        const ul = el('ul', {cls:'rows'});
+        for (const a of linked) { const lk = el('button', {cls:'agentlink', type:'button', text:a.name}); lk.addEventListener('click', () => openAgent(A.agentKey(a))); ul.append(el('li', null, el('span', {cls:'what'}, lk))); }
+        box.append(el('p', {cls:'empty', text:'Agents homed here:'}), ul);
+      } else box.append(el('p', {cls:'empty', text:'No registered agent is homed here. Status: Unknown, Not connected.'}));
+      body.append(box);
+    }
+  }
+  const agents = id === '00' ? A.REGISTER.filter(a => a.master) : id === '03' ? A.REGISTER : A.REGISTER.filter(a => a.stream === id);
+  body.append(el('h3', {text: id === '03' ? 'Agents homed in 03' : 'Registered agents'}));
+  if (!agents.length) body.append(el('p', {cls:'empty', text:'No registered AI agent for this stream.'}));
+  else {
+    const ul = el('ul', {cls:'rows'});
+    for (const a of agents) {
+      const cur = A.currentEvent(store, a, now);
+      const link = el('button', {cls:'agentlink', type:'button', text:a.name}); link.addEventListener('click', () => openAgent(A.agentKey(a)));
+      ul.append(el('li', null, dot(cur), el('span', {cls:'what'}, link, el('span', null, document.createTextNode(' '), statusNode(cur), document.createTextNode(' '), verChip(a)))));
+    }
+    body.append(ul);
+  }
+  $('panel').classList.add('show');
+  if (focus !== false) $('panelClose').focus();
+}
+function closeStream(){
+  $('panel').classList.remove('show'); openStreamId = null; openSub = null; zoomHome(); document.querySelector('.stagewrap').classList.remove('focus');
+  reveals.forEach(rv => rv.classList.remove('on'));
+  document.querySelectorAll('#orbit .node').forEach(n => n.classList.remove('active'));
+}
+
+/* ---------- Agent command interface (radial holographic console) ---------- */
+const FACETS = [['activity','Current activity'], ['history','Activity history'], ['performance','Performance'], ['costs','Costs'], ['controls','Controls & approvals']];
+const FACET_ICON = {
+  activity:'M-16 0 H-8 L-4 -10 L2 12 L7 -3 L10 0 H16', history:'M0 -13 V0 L9 6 M-14 0 A14 14 0 1 1 -10 10 M-14 10 V2 H-6',
+  performance:'M-14 12 V-2 M-5 12 V-10 M4 12 V2 M13 12 V-14', costs:'M0 -14 A14 14 0 1 0 0.1 -14 M-5 -4 Q0 -9 5 -4 Q0 0 -5 4 Q0 9 5 4', controls:'M-12 -8 H12 M-12 0 H12 M-12 8 H12 M-4 -11 V-5 M5 -3 V3 M-2 5 V11'
+};
+let selKey = null, selTab = 'activity', prevFocus = null;
+function cell(l, v, wide){ return el('div', {cls:'cell' + (wide ? ' wide' : '')}, el('label', {text:l}), el('span', {text:v})); }
+let agentZoom = false;
+function openAgent(key){
+  if (!agentByKey(key)) return;
+  if (!camId && !openStreamId) { agentZoom = true; zoomTo(agentByKey(key).stream); }
+  prevFocus = document.activeElement; selKey = key; selTab = 'activity'; coreSig = '';
+  $('agentModal').classList.add('open'); $('agentModal').setAttribute('aria-hidden', 'false');
+  drawAgent(); $('detailClose').focus();
+}
+function closeAgent(){
+  $('agentModal').classList.remove('open'); $('agentModal').setAttribute('aria-hidden', 'true'); selKey = null;
+  if (agentZoom && !openStreamId) zoomHome();
+  agentZoom = false;
+  if (prevFocus && prevFocus.isConnected) prevFocus.focus();
+}
+let coreSig = '';
+function buildCore(a, cur, evs){
+  const svg = $('coreSvg');
+  const st = cur ? cur.status : 'none', col = stateColor(st, streamOf(a.stream).color), c = 350;
+  const age = ageOf(cur), frac = cur ? Math.max(0, 1 - Math.min(age, A.STALE_AFTER_MS) / A.STALE_AFTER_MS) : 0;
+  const sig = [selKey, st, cur ? Math.round(frac * 200) : 'x'].join('|');
+  if (sig === coreSig) return {col, st, nav:FACETS.map((f, i) => { const ang = (-90 + i * 72) * Math.PI / 180; return {x:c + 262 * Math.cos(ang), y:c + 262 * Math.sin(ang), ang}; })};
+  coreSig = sig; svg.replaceChildren();
+  const defs = sv('defs');
+  const gr = sv('radialGradient', {id:'cDisc', cx:'50%', cy:'40%', r:'70%'});
+  gr.append(sv('stop', {offset:'0%', 'stop-color':col, 'stop-opacity':'.34'}), sv('stop', {offset:'55%', 'stop-color':'#08254a', 'stop-opacity':'.78'}), sv('stop', {offset:'100%', 'stop-color':'#020a1a', 'stop-opacity':'.92'}));
+  defs.append(gr, sv('filter', {id:'cGlow', x:'-30%', y:'-30%', width:'160%', height:'160%'}, sv('feGaussianBlur', {stdDeviation:'7', result:'b'}), sv('feMerge', {}, sv('feMergeNode', {in:'b'}), sv('feMergeNode', {in:'SourceGraphic'}))));
+  svg.append(defs);
+  const g = sv('g', {class:'core', 'data-s':st});
+  g.append(sv('circle', {class:'cslow', cx:c, cy:c, r:340, fill:'none', stroke:'#3aa8ff', 'stroke-opacity':'.32', 'stroke-dasharray':'2 12', 'stroke-width':'2'}));
+  g.append(sv('circle', {class:'cslow', cx:c, cy:c, r:318, fill:'none', stroke:'#9b6bff', 'stroke-opacity':'.2', 'stroke-dasharray':'30 18', 'stroke-width':'1.4', style:'animation-direction:reverse'}));
+  const nav = FACETS.map((f, i) => { const ang = (-90 + i * 72) * Math.PI / 180; return {x:c + 262 * Math.cos(ang), y:c + 262 * Math.sin(ang), ang}; });
+  nav.forEach(n => g.append(sv('line', {x1:c + 176 * Math.cos(n.ang), y1:c + 176 * Math.sin(n.ang), x2:c + 198 * Math.cos(n.ang), y2:c + 198 * Math.sin(n.ang), stroke:col, 'stroke-opacity':'.8', 'stroke-width':'2.4', 'stroke-linecap':'round'})));
+  g.append(sv('circle', {class:'cdash', cx:c, cy:c, r:194, fill:'none', stroke:col, 'stroke-opacity':'.45', 'stroke-dasharray':'6 10', 'stroke-width':'1.6'}));
+  g.append(sv('circle', {cx:c, cy:c, r:172, fill:'none', stroke:'#12324f', 'stroke-width':'9'}));
+  const a0 = -Math.PI / 2, a1 = a0 + Math.PI * 2 * Math.max(frac, .001);
+  if (cur) g.append(sv('path', {d:`M${c + 172 * Math.cos(a0)} ${c + 172 * Math.sin(a0)} A172 172 0 ${frac > .5 ? 1 : 0} 1 ${c + 172 * Math.cos(a1)} ${c + 172 * Math.sin(a1)}`, fill:'none', stroke:col, 'stroke-width':'9', 'stroke-linecap':'round', filter:'url(#cGlow)', class:'freshArc'}));
+  else g.append(sv('circle', {cx:c, cy:c, r:172, fill:'none', stroke:col, 'stroke-opacity':'.4', 'stroke-width':'3', 'stroke-dasharray':'4 8'}));
+  if (cur) {      // a slow sweep and drifting motes mark a reporting core; an agent with no report stays still
+    g.append(sv('path', {class:'csweep', d:`M${c + 186 * Math.cos(-1.2)} ${c + 186 * Math.sin(-1.2)} A186 186 0 0 1 ${c + 186 * Math.cos(-.2)} ${c + 186 * Math.sin(-.2)}`, fill:'none', stroke:'#fff', 'stroke-opacity':'.55', 'stroke-width':'2.4', 'stroke-linecap':'round', filter:'url(#cGlow)'}));
+    const motes = sv('g', {class:'cmotes'});
+    for (let i = 0; i < 14; i++) { const an = i / 14 * Math.PI * 2, rr = 206 + (i % 3) * 5; motes.append(sv('circle', {cx:c + rr * Math.cos(an), cy:c + rr * Math.sin(an), r:i % 4 === 0 ? 2.4 : 1.5, fill:col, 'fill-opacity':'.7'})); }
+    g.append(motes);
+  }
+  g.append(sv('circle', {class:'cring', cx:c, cy:c, r:152, fill:'none', stroke:col, 'stroke-width':'3'}));
+  g.append(sv('circle', {class:'cglow', cx:c, cy:c, r:154, fill:'none', stroke:col, 'stroke-width':'3.4', filter:'url(#cGlow)'}));
+  g.append(sv('circle', {cx:c, cy:c, r:150, fill:'url(#cDisc)', stroke:col, 'stroke-opacity':'.9', 'stroke-width':'2'}));
+  const gl = glyph(st, 20, col, !a.code); gl.setAttribute('transform', `translate(${c} ${c - 104})`); g.append(gl);
+  svg.append(g);
+  return {nav, col, st};
+}
+/* Floating, genuine recent activity: one entry per reported event, newest first. No boxes. */
+function buildTimeline(a, evs){
+  const box = $('detailTimeline'); box.replaceChildren(el('h3', {cls:'ph', text:'Recent activity'}));
+  if (!evs.length) { box.append(el('p', {cls:'empty', text:'No reports received. Nothing to show.'})); return; }
+  const ul = el('ul', {cls:'tl'});
+  evs.slice(0, 7).forEach((e, i) => {
+    const gsv = sv('svg', {viewBox:'-10 -10 20 20', 'aria-hidden':'true'}); gsv.append(glyph(e.status, 7, stateColor(e.status, streamOf(a.stream).color)));
+    const mode = e.dry_run === null ? null : e.dry_run ? 'dry run' : 'live';
+    const li = el('li', {cls: i > 4 ? 'dim' : '', style:'animation-delay:' + (i * 60) + 'ms'}, gsv,
+      el('b', {text:STATUS_TEXT[e.status]}), el('span', {text:A.formatNicosia(e.ms, 'datetime') + (mode ? ', ' + mode : '') + (e.flags.some(f => f.code === 'DELIVERED_LATE') ? ', delivered late' : '')}));
+    ul.append(li);
+  });
+  box.append(ul);
+}
+/* Circular status indicators. Every segment and arc is a genuine report or the genuine age of one. */
+function ring(r, w, col, o){ return sv('circle', Object.assign({cx:0, cy:0, r, fill:'none', stroke:col, 'stroke-width':w}, o || {})); }
+function arc(r, from, to, w, col, o){
+  const p = a => (r * Math.cos(a)).toFixed(2) + ' ' + (r * Math.sin(a)).toFixed(2);
+  return sv('path', Object.assign({d:`M${p(from)} A${r} ${r} 0 ${(to - from) > Math.PI ? 1 : 0} 1 ${p(to)}`, fill:'none', stroke:col, 'stroke-width':w, 'stroke-linecap':'round'}, o || {}));
+}
+function gauge(label, note, draw){
+  const svg = sv('svg', {viewBox:'-50 -50 100 100', role:'img', 'aria-label':label + ': ' + note}); draw(svg);
+  return el('div', {cls:'gauge'}, svg, el('b', {text:label}), el('small', {text:note}));
+}
+function buildGauges(a, cur, evs, col){
+  const box = $('detailGauges'); box.replaceChildren();
+  const now = nowFn(), age = cur ? now - cur.ms : null, frac = cur ? Math.max(0, 1 - Math.min(age, A.STALE_AFTER_MS) / A.STALE_AFTER_MS) : 0;
+  const txt = (t, y, size) => sv('text', {x:0, y, 'text-anchor':'middle', fill:'#fff', 'font-family':'Rajdhani,Arial,sans-serif', 'font-weight':'700', 'font-size':size, text:t});
+  box.append(gauge('Freshness', cur ? 'Reported ' + FXH.age(age) : 'No report received', svg => {
+    svg.append(ring(38, 7, '#12324f'));
+    if (cur) svg.append(arc(38, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(frac, .01), 7, col, {filter:'url(#glowS)'})); else svg.append(ring(38, 3, col, {'stroke-opacity':'.4', 'stroke-dasharray':'3 6'}));
+    svg.append(txt(cur ? FXH.ageShort(age) : 'No report', cur ? 6 : 4, cur ? 20 : 11));
+  }));
+  const in24 = evs.filter(e => now - e.ms <= A.STALE_AFTER_MS).length, segs = Math.min(in24, 12);
+  box.append(gauge('Reports 24 h', in24 ? in24 + ' report' + (in24 === 1 ? '' : 's') + ', one segment each' + (in24 > 12 ? ' (first 12 drawn)' : '') : 'None in the last 24 h', svg => {
+    svg.append(ring(38, 7, '#12324f'));
+    if (!segs) svg.append(ring(38, 3, col, {'stroke-opacity':'.4', 'stroke-dasharray':'3 6'}));
+    for (let i = 0; i < segs; i++) { const sp = Math.PI * 2 / segs, gap = segs > 1 ? .16 : 0; svg.append(arc(38, -Math.PI / 2 + i * sp + gap / 2, -Math.PI / 2 + (i + 1) * sp - gap / 2, 7, col, {filter:'url(#glowS)'})); }
+    svg.append(txt(String(in24), 7, 22));
+  }));
+  const done = evs.filter(e => e.status !== 'working'), dry = done.filter(e => e.dry_run === true).length, live = done.filter(e => e.dry_run === false).length, ns = done.length - dry - live;
+  box.append(gauge('Mode', done.length ? dry + ' dry run, ' + live + ' live, ' + ns + ' not stated' : 'No completed reports', svg => {
+    svg.append(ring(38, 7, '#12324f'));
+    if (!done.length) svg.append(ring(38, 3, col, {'stroke-opacity':'.4', 'stroke-dasharray':'3 6'}));
+    let at = -Math.PI / 2; const parts = [[dry, '#62cfff', null], [live, '#ffd166', null], [ns, '#8aa8c0', '3 4']];
+    for (const [n, cc, da] of parts) if (n) { const sp = Math.PI * 2 * n / done.length; svg.append(arc(38, at + .05, at + sp - .05, 7, cc, da ? {'stroke-dasharray':da} : {})); at += sp; }
+    const last = done[0]; svg.append(txt(last ? (last.dry_run === null ? 'n/s' : last.dry_run ? 'Dry' : 'Live') : '-', 7, 19));
+  }));
+}
+function drawAgent(){
+  if (!selKey) return;
+  const a = agentByKey(selKey), now = nowFn(), cur = A.currentEvent(store, a, now), evs = A.eventsFor(store, a);
+  const { nav, col, st } = buildCore(a, cur, evs);
+  buildTimeline(a, evs); buildGauges(a, cur, evs, col);
+  $('detailName').textContent = a.name;
+  $('detailPath').textContent = 'Home ' + a.home + ', operates in ' + a.stream + ' ' + streamOf(a.stream).name;
+  $('detailCode').textContent = a.code ? a.code : 'No verified code: ' + a.interim_id;
+  const state = $('detailState'); state.replaceChildren(el('span', {cls:'st', 'data-s':st, text: st === 'none' ? 'Unknown' : (STATE_LABEL[st] || 'Unknown')}));
+  const stx = $('detailStatus'); stx.replaceChildren(dot(cur), statusNode(cur), document.createTextNode(cur ? ', reported ' + A.formatNicosia(cur.ms, 'datetime') + '. ' + provenance(cur) : '. No live connection.'));
+  $('detailFresh').textContent = cur ? 'Reported ' + FXH.age(ageOf(cur)) : 'No report received';
+  const chipline = $('detailChips'); chipline.replaceChildren(verChip(a));
+  $('crumbStream').textContent = a.stream + ' ' + streamOf(a.stream).name;
+  $('crumbAgent').textContent = a.name;
+  const tabs = $('detailTabs');
+  if (tabs.dataset.key !== selKey) {       // built once per agent so that switching facets is a smooth state change, not a rebuild
+    tabs.replaceChildren(); tabs.dataset.key = selKey;
+    FACETS.forEach(([k, n], i) => {
+      const b = el('button', {type:'button', 'aria-selected':'false', 'data-facet':k, style:`left:${(nav[i].x / 7).toFixed(2)}%;top:${(nav[i].y / 7).toFixed(2)}%`});
+      const ic = sv('svg', {viewBox:'-20 -20 40 40', 'aria-hidden':'true', fill:'none', stroke:'currentColor', 'stroke-width':'2.4', 'stroke-linecap':'round', 'stroke-linejoin':'round'}); ic.append(sv('path', {d:FACET_ICON[k]}));
+      b.append(ic, document.createTextNode(n));
+      b.addEventListener('click', () => { selTab = k; drawAgent(); });
+      tabs.append(b);
+    });
+  }
+  [...tabs.children].forEach(b => b.setAttribute('aria-selected', String(b.dataset.facet === selTab)));
+  const facet = FACETS.find(f => f[0] === selTab) || FACETS[0];
+  $('detailPaneTitle').textContent = facet[1];
+  const pane = $('detailPane'); if (pane.dataset.facet !== selTab + '|' + selKey) { pane.dataset.facet = selTab + '|' + selKey; pane.style.animation = 'none'; void pane.offsetWidth; pane.style.animation = ''; }
+  const c = $('detailContent'); c.replaceChildren();
+  const hasCost = cur && !cur.public && (cur.cost_eur !== null || cur.cost_usd_estimated);
+  if (selTab === 'activity') {
+    if (!cur) c.append(el('div', {cls:'msg', text: evs.length ? 'No report in the last 24 hours. Older reports are in Activity history and are not used as current status.' : 'No agent activity received. Current task, progress and elapsed time are unavailable.'}));
+    else {
+      const age = ageOf(cur), frac = Math.max(0, 1 - Math.min(age, A.STALE_AFTER_MS) / A.STALE_AFTER_MS);
+      c.append(el('div', {cls:'grid2'},
+        cell('Reported state', STATUS_TEXT[cur.status]),
+        cell('Last execution time', A.formatNicosia(cur.ms, 'full')),
+        cell('Current task', cur.public ? 'Not published' : cur.task || 'Not supplied'),
+        cell('Execution mode', cur.dry_run === null ? 'Not stated' : cur.dry_run ? 'Dry run' : 'Live (non-dry-run)'),
+        cell(cur.public ? 'Time zone' : 'Stored (UTC)', cur.public ? 'Europe/Nicosia (EET or EEST)' : cur.timestamp_utc),
+        cell('Received by ACC', receivedLine(cur)),
+        cell('Reporting freshness', FXH.age(age) + '. Full bar is a report just now; empty is 24 hours old.', true)));
+      c.append(el('div', {cls:'fbar'}, el('i', {style:'width:' + Math.max(3, Math.round(frac * 100)) + '%'})));
+      if (cur.flags.length) c.append(el('div', {style:'margin-top:10px'}, chips(cur.flags, true)));
+    }
+  } else if (selTab === 'history') {
+    if (!evs.length) c.append(el('div', {cls:'msg', text:'No reports received for this agent. Not connected; status is Unknown.'}));
+    else {
+      const ul = el('ul', {cls:'hist'});
+      for (const e of evs) ul.append(el('li', null, el('div', null, el('b', {text:A.formatNicosia(e.ms, 'datetime') + '  '}), statusNode(e), document.createTextNode(e.task ? ', ' + e.task : '')),
+        el('div', {style:'color:#8fb4d4;font-size:11.5px', text:[e.dry_run === null ? null : e.dry_run ? 'dry run' : 'live', e.public ? null : e.model_tier, e.public || e.cost_eur === null ? null : eur(e.cost_eur) + ' ' + e.cost_basis, e.flags.some(f => f.code === 'DELIVERED_LATE') ? 'delivered late ' + A.formatNicosia(Date.parse(e.received_at_utc), 'time') : null].filter(Boolean).join(', ')}),
+        chips(e.flags, true)));
+      c.append(ul);
+    }
+  } else if (selTab === 'performance') {
+    const p = A.agentPerformance(store, a), last24 = evs.filter(e => now - e.ms <= A.STALE_AFTER_MS).length;
+    if (!p.total) c.append(el('div', {cls:'msg', text:'No usage data reported. Reports received, outcomes and success rate are unavailable.'}));
+    else {
+      c.append(el('div', {cls:'grid2'},
+        cell('Reports received (in view)', String(p.total)),
+        cell('Reports in the last 24 h', String(last24)),
+        cell('Failed reports', String(p.failed)),
+        cell('Dry runs / live runs', p.dryRuns + ' / ' + p.liveRuns + (p.total - p.dryRuns - p.liveRuns ? ' (' + (p.total - p.dryRuns - p.liveRuns) + ' not stated)' : '')),
+        cell('Tasks completed and success rate', 'Unavailable: not published', true)));
+      const t0 = evs[evs.length - 1].ms, t1 = now, spanMs = Math.max(t1 - t0, 60000), W = 520;
+      const sp = sv('svg', {class:'spark', viewBox:'0 0 ' + W + ' 56', role:'img', 'aria-label':'Reported events from oldest to now'});
+      sp.append(sv('line', {x1:6, y1:30, x2:W - 6, y2:30, stroke:'#3b8fc4', 'stroke-opacity':'.6', 'stroke-width':'1.4'}));
+      evs.slice().reverse().forEach(e => { const x = 12 + (W - 24) * ((e.ms - t0) / spanMs); const g = glyph(e.status, 6.5, stateColor(e.status, '#62cfff')); g.setAttribute('transform', `translate(${x.toFixed(1)} 30)`); sp.append(g); });
+      sp.append(sv('text', {x:6, y:52, fill:'#8aa8c0', 'font-size':'11', 'font-family':'Inter,Arial,sans-serif', text:A.formatNicosia(t0, 'time')}), sv('text', {x:W - 6, y:52, fill:'#8aa8c0', 'font-size':'11', 'text-anchor':'end', 'font-family':'Inter,Arial,sans-serif', text:'now'}));
+      c.append(sp, el('p', {cls:'empty', text:'Each marker is one genuine reported event, placed by time. Shape shows the reported state.'}));
+    }
+  } else if (selTab === 'costs') {
+    const ca = costDoc && a.code ? costDoc.by_agent.find(x => x.agent_id === a.code) : null;
+    if (ca) {
+      c.append(el('div', {cls:'grid2'},
+        cell('API cost today', money(ca.today.api) || 'No cost data'), cell('API cost, month to date', money(ca.month.api) || 'No cost data'),
+        cell('Coverage, month to date', coverage(ca.month.api), true),
+        cell('Original currency', ca.month.api.original ? origText(ca.month.api.original) : 'No cost data', true)));
+      c.append(el('div', {cls:'msg', style:'margin-top:12px', text:costDoc.evidence.note + '. Nothing is estimated from activity. Only costs the agent itself reported are shown.'}));
+    } else if (hasCost) {
+      const p = A.agentPerformance(store, a);
+      c.append(el('div', {cls:'grid2'}, cell('API cost reported', p.costed ? eur(p.apiEur) + ' across ' + p.costed + ' of ' + p.total + ' reports' : 'No cost data')));
+    } else {
+      c.append(el('div', {cls:'grid2'}, cell('API cost today', 'No cost data'), cell('API cost, month to date', 'No cost data'), cell('Model tier', 'Not published')));
+      c.append(el('div', {cls:'msg', style:'margin-top:12px', text:'Public cost fields are awaiting the owner\u2019s approval. None is shown, estimated or inferred.'}));
+    }
+  } else {
+    const ctl = a.controls, st2 = cur ? cur.status : 'none';
+    c.append(el('div', {cls:'grid2'},
+      cell('Approval state', st2 === 'awaiting_approval' ? 'Approval requested; details are not published' : cur ? 'No approval request reported' : 'No report received'),
+      cell('Execution mode as reported', cur ? (cur.dry_run === null ? 'Not stated' : cur.dry_run ? 'Dry run' : 'Live (non-dry-run)') : 'Unknown'),
+      cell('Spending allowance', 'Not published'), cell('Remote controls', 'None enabled')));
+    c.append(el('div', {cls:'msg', style:'margin-top:12px', text:'Display only. The ACC records what agents report; approvals and commands are handled outside this view.'}));
+  }
+}
+
+const FOLDS = ['foldAgents', 'foldKey', 'foldSys'].map($);
+FOLDS.forEach(f => f.addEventListener('toggle', () => { if (f.open) FOLDS.forEach(o => { if (o !== f) o.open = false; }); }));
+$('agentFilter').addEventListener('change', () => renderAgents(A.summarise(store, nowFn())));
+$('panelClose').addEventListener('click', closeStream);
+$('agentModal').addEventListener('click', e => { if (e.target === $('agentModal')) closeAgent(); });
+$('detailClose').addEventListener('click', closeAgent);
+$('crumbCompany').addEventListener('click', () => { closeAgent(); closeStream(); });
+$('crumbStream').addEventListener('click', () => { const a = selKey && agentByKey(selKey); agentZoom = false; closeAgent(); if (a) openStream(a.stream); });
+
+document.addEventListener('keydown', e => {
+  if (selKey) {
+    if (e.key === 'Escape') { closeAgent(); return; }
+    if (e.key === 'Tab') {
+      const els = [...$('agentModal').querySelectorAll('button:not([disabled])')];
+      const first = els[0], last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    return;
+  }
+  if (e.key === 'Escape' && openStreamId) closeStream();
+  else if (e.key === 'Escape') zoomHome();
+});
+
+/* ---------- Restricted public status (ACC-R014) ---------- */
+const PUB_SOURCE = 'acc-public-status';
+const PUB_STATUS = {active:'working', idle:'idle', failed:'failed', disconnected:'offline', awaiting_approval:'awaiting_approval', unknown:'unknown'};
+const PUB_TS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+let pubInfo = null;
+const FEED_STALE_MS = 15 * 60 * 1000;   // feed is cached 30 s and polled every 60 s: 15 minutes without a refresh means the feed itself is down
+function statusUrl(){
+  const m = document.querySelector('meta[name="acc-status-url"]'), u = m && m.content ? m.content.trim() : 'status.json';
+  return /^(https:\/\/[a-z0-9.-]+(:\d{1,5})?\/[A-Za-z0-9._~\/-]+|[A-Za-z0-9._-]+)$/.test(u) ? u : 'status.json';
+}
+/* Strict allowlist: any unexpected field, type or value means the whole document is ignored. Never rendered as markup. */
+function validPublic(d){
+  const only = (o, ks) => o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length === ks.length && ks.every(k => k in o);
+  if (!only(d, ['schema', 'generated_at_utc', 'window_hours', 'working_timeout_minutes', 'agents', 'note']) && !only(d, ['schema', 'generated_at_utc', 'window_hours', 'working_timeout_minutes', 'agents'])) return false;
+  if (d.schema !== 'acc-public-status/1' || !(d.generated_at_utc === null || PUB_TS.test(d.generated_at_utc))) return false;
+  if (!Number.isInteger(d.window_hours) || !Number.isInteger(d.working_timeout_minutes) || d.working_timeout_minutes < 1 || !Array.isArray(d.agents) || d.agents.length > 50) return false;
+  if ('note' in d && (typeof d.note !== 'string' || d.note.length > 300)) return false;
+  return d.agents.every(a => only(a, ['agent_id', 'name', 'verification', 'state', 'state_reason', 'as_of_utc', 'last_report_utc', 'reports_24h', 'history'])
+    && (a.agent_id === null || /^03AA-[0-9]{2}_[A-Za-z0-9_]{1,80}$/.test(a.agent_id)) && typeof a.name === 'string' && a.name.length <= 80
+    && ['verified', 'provisional'].includes(a.verification) && a.state in PUB_STATUS && ['reported', 'no_report', 'stale', 'no_completion', 'provisional'].includes(a.state_reason)
+    && [a.as_of_utc, a.last_report_utc].every(t => t === null || PUB_TS.test(t)) && Number.isInteger(a.reports_24h) && Array.isArray(a.history) && a.history.length <= 10
+    && a.history.every(h => only(h, ['at_utc', 'state', 'mode', 'delivered_late']) && PUB_TS.test(h.at_utc) && h.state in PUB_STATUS && [null, 'dry_run', 'live'].includes(h.mode) && typeof h.delivered_late === 'boolean'));
+}
+function applyPublicStatus(doc){
+  store.events.length = 0; store.rejected.length = 0; store.keys.clear(); store.seq = 0; pubInfo = null;
+  if (validPublic(doc)) {
+    lastOkMs = nowFn(); workTimeoutMs = doc.working_timeout_minutes * 60000;
+    const now = nowFn();
+    for (const a of doc.agents) {
+      const reg = A.REGISTER.find(r => r.code && r.code === a.agent_id);
+      if (!reg) continue;
+      const hist = a.history.slice().sort((x, y) => Date.parse(x.at_utc) - Date.parse(y.at_utc));
+      hist.forEach((h, i) => {
+        let status = PUB_STATUS[h.state];
+        if (i === hist.length - 1 && status === 'working' && now - Date.parse(h.at_utc) > doc.working_timeout_minutes * 60000) status = 'unknown';
+        const raw = {agent_id: a.agent_id, status, timestamp: h.at_utc, event_id: 'pub-' + a.agent_id + '-' + h.at_utc};
+        if (h.mode) raw.dry_run = h.mode === 'dry_run';
+        A.ingestReport(store, {version:'1.1', events:[raw]}, now, PUB_SOURCE, {received_at_utc: h.at_utc});
+      });
+    }
+    for (const e of store.events) { e.flags = []; e.public = true; }
+    if (store.events.length) pubInfo = {generated: doc.generated_at_utc};
+  }
+  render();
+  return !!pubInfo;
+}
+function loadPublicStatus(){
+  if (document.hidden || typeof fetch !== 'function') return Promise.resolve();
+  return fetch(statusUrl(), {cache:'no-store', credentials:'omit'}).then(r => r.ok ? r.json() : null).then(doc => { if (doc) applyPublicStatus(doc); }).catch(() => {});
+}
+
+
+/* ---------- AI costs (permanent panel; schema acc-public-cost/3: direct costs of the registered AI agents ONLY) ---------- */
+/* Scope: what the registered AI agents themselves reported as the cost of their executions. General subscriptions, hosting, GitHub and other
+   company costs are not part of this feed and have no place in any figure here. Missing figures read No cost data, never zero, and nothing is
+   estimated from activity. The document is fetched only from the address in the acc-cost-url meta, once a second approved address is set. */
+let costDoc = null, costProposed = false;
+const COST_URL_RE = /^https:\/\/[a-z0-9.-]+(:\d{1,5})?\/[A-Za-z0-9._~\/-]+$/;
+function costUrl(){ const m = document.querySelector('meta[name="acc-cost-url"]'), u = m && m.content ? m.content.trim() : ''; return COST_URL_RE.test(u) ? u : ''; }
+function validCost(d){
+  const only = (o, ks) => o && typeof o === 'object' && !Array.isArray(o) && Object.keys(o).length === ks.length && ks.every(k => k in o);
+  const num = v => v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1e7), cnt = v => Number.isInteger(v) && v >= 0 && v <= 1e6;
+  const orig = o => o === null || (only(o, ['currency', 'amount', 'kind']) && o.currency === 'USD' && o.kind === 'agent_estimate' && num(o.amount));
+  const api = c => only(c, ['state', 'amount_eur', 'costed_reports', 'completion_reports', 'original']) && ['recorded', 'unavailable'].includes(c.state) && num(c.amount_eur) && cnt(c.costed_reports) && cnt(c.completion_reports) && orig(c.original)
+    && ((c.state === 'recorded') === (c.amount_eur !== null)) && ((c.state === 'recorded') === (c.costed_reports > 0));
+  const AID = /^03AA-[0-9]{2}_[A-Za-z0-9_]{1,80}$/, DATE = /^\d{4}-\d{2}-\d{2}$/, TIERS = ['code', 'haiku', 'sonnet', 'opus'];
+  if (!only(d, ['schema', 'generated_at_utc', 'currency', 'time_zone', 'scope', 'evidence', 'today', 'month', 'daily', 'by_agent', 'by_model_tier', 'executions', 'tokens', 'gaps'])) return false;
+  if (d.schema !== 'acc-public-cost/3' || d.currency !== 'EUR' || d.time_zone !== 'Europe/Nicosia' || d.scope !== 'registered_ai_agents_only' || !PUB_TS.test(d.generated_at_utc)) return false;
+  if (!only(d.evidence, ['kind', 'provider_confirmed', 'note']) || d.evidence.kind !== 'agent_execution_records' || d.evidence.provider_confirmed !== false || typeof d.evidence.note !== 'string' || d.evidence.note.length > 160) return false;
+  if (!only(d.today, ['date', 'api']) || !DATE.test(d.today.date) || !api(d.today.api) || !only(d.month, ['month', 'api']) || !/^\d{4}-\d{2}$/.test(d.month.month) || !api(d.month.api)) return false;
+  if (!Array.isArray(d.daily) || d.daily.length !== 14 || !d.daily.every(x => only(x, ['date', 'api_eur']) && DATE.test(x.date) && num(x.api_eur))) return false;
+  if (!Array.isArray(d.by_agent) || d.by_agent.length > 50 || !Array.isArray(d.by_model_tier) || d.by_model_tier.length !== 4) return false;
+  const al = a => a === null || (only(a, ['per_task_eur', 'daily_eur', 'monthly_eur', 'today_eur', 'month_eur']) && Object.values(a).every(v => typeof v === 'number' && num(v)));
+  if (!d.by_agent.every(a => only(a, ['agent_id', 'name', 'today', 'month', 'allowance']) && AID.test(a.agent_id) && typeof a.name === 'string' && a.name.length <= 80 && !/[<>]/.test(a.name) && only(a.today, ['api']) && api(a.today.api) && only(a.month, ['api']) && api(a.month.api) && al(a.allowance))) return false;
+  if (!d.by_model_tier.every((t, i) => only(t, ['tier', 'today', 'month']) && t.tier === TIERS[i] && only(t.today, ['api']) && api(t.today.api) && only(t.month, ['api']) && api(t.month.api))) return false;
+  if (!Array.isArray(d.executions) || d.executions.length > 8 || !d.executions.every(e => only(e, ['at_utc', 'agent_id', 'tier', 'cost_eur', 'mode']) && PUB_TS.test(e.at_utc) && AID.test(e.agent_id) && (e.tier === null || TIERS.includes(e.tier)) && num(e.cost_eur) && [null, 'dry_run', 'live'].includes(e.mode))) return false;
+  if (!only(d.tokens, ['state', 'input', 'output', 'cache_read', 'cache_write']) || d.tokens.state !== 'unavailable' || ['input', 'output', 'cache_read', 'cache_write'].some(k => d.tokens[k] !== null)) return false;
+  return Array.isArray(d.gaps) && d.gaps.length <= 4 && d.gaps.every(g => only(g, ['subject', 'state']) && ['anthropic_api_billing', 'token_counts'].includes(g.subject) && ['unavailable', 'unconfirmed'].includes(g.state));
+}
+function applyPublicCost(doc, opts){
+  costDoc = validCost(doc) ? doc : null; costProposed = !!(costDoc && opts && opts.proposed);
+  renderCost(); return !!costDoc;
+}
+function loadPublicCost(){
+  const u = costUrl();
+  if (!u || document.hidden || typeof fetch !== 'function') return Promise.resolve();
+  return fetch(u, {cache:'no-store', credentials:'omit'}).then(r => r.ok ? r.json() : null).then(doc => { if (doc) applyPublicCost(doc); }).catch(() => {});
+}
+const TIER_LABEL = {code:'No model call', haiku:'Haiku', sonnet:'Sonnet', opus:'Opus'};
+const GAP_TEXT = {
+  anthropic_api_billing: {unconfirmed:'Anthropic API billing is not connected, so agent-reported figures are unconfirmed.', unavailable:'Anthropic API billing is not connected.'},
+  token_counts: {unavailable:'The agents do not report input, output or cache token counts.', unconfirmed:'Token counts are unconfirmed.'}
+};
+const DAY_FMT = d => d.slice(8, 10) + '/' + d.slice(5, 7);
+const money = x => x.amount_eur === null || x.amount_eur === undefined ? null : eur(x.amount_eur);
+function coverage(x){ return x.state === 'recorded' ? x.costed_reports + ' of ' + x.completion_reports + ' reports' : (x.completion_reports ? x.completion_reports + ' report' + (x.completion_reports === 1 ? '' : 's') + ', none costed' : 'no reports'); }
+function origText(o){ return o ? 'USD ' + o.amount + ' (agent estimate), not converted' : ''; }
+function nodata(){ return el('span', {cls:'cv nodata', text:'No cost data'}); }
+function cpSection(title, ...kids){ return el('section', {cls:'cp-sec'}, el('h3', {text:title}), ...kids); }
+function trendSvg(daily){
+  const W = 280, H = 62, n = daily.length, bw = 13.4, gap = (W - n * bw) / (n - 1), top = 4, base = H - 4, usable = base - top;
+  const svg = sv('svg', {class:'cp-trend', viewBox:'0 0 ' + W + ' ' + (H + 12), role:'img', 'aria-label':'Daily agent API cost, last 14 days'});
+  const mx = Math.max(0, ...daily.map(x => x.api_eur || 0)), scale = mx > 0 ? usable / mx : 0;
+  svg.append(sv('line', {x1:0, y1:base + .5, x2:W, y2:base + .5, stroke:'#2a6a9a', 'stroke-opacity':'.7', 'stroke-width':'1'}));
+  daily.forEach((x, i) => {
+    const bx = i * (bw + gap), last = i === n - 1;
+    if (x.api_eur === null) { svg.append(sv('rect', {x:bx, y:base - 3, width:bw, height:3, fill:'none', stroke:'#4d7ea3', 'stroke-opacity':'.55', 'stroke-dasharray':'2 2', 'stroke-width':'1'}, sv('title', {text:DAY_FMT(x.date) + ': no cost data'}))); return; }
+    const h = Math.max(2, x.api_eur * scale);
+    svg.append(sv('rect', {x:bx, y:base - h, width:bw, height:h, fill:'#62cfff', 'fill-opacity': last ? '1' : '.82'}, sv('title', {text:DAY_FMT(x.date) + ': ' + eur(x.api_eur) + ' recorded'})));
+  });
+  svg.append(sv('text', {x:0, y:H + 10, class:'cp-ax', text:DAY_FMT(daily[0].date)}), sv('text', {x:W, y:H + 10, class:'cp-ax', 'text-anchor':'end', text:'today'}));
+  if (mx > 0) svg.append(sv('text', {x:0, y:top + 6, class:'cp-ax', text:'max ' + eur(mx)}));
+  return svg;
+}
+function allowanceLine(al){
+  if (!al) return el('small', {cls:'cp-al', text:'No approved allowance configured'});
+  const pct = Math.min(100, Math.round(100 * al.month_eur / al.monthly_eur));
+  return el('small', {cls:'cp-al'}, document.createTextNode('Allowance: ' + eur(al.daily_eur) + ' a day, ' + eur(al.monthly_eur) + ' a month. Spent ' + eur(al.today_eur) + ' today, ' + eur(al.month_eur) + ' this month (' + pct + '% of the monthly limit)'),
+    el('i', {cls:'cp-bar' + (al.today_eur > al.daily_eur || al.month_eur > al.monthly_eur ? ' over' : '')}, el('u', {style:'width:' + pct + '%'})));
+}
+function renderCost(){
+  const root = $('costPanel'), d = costDoc; root.replaceChildren();
+  $('costFlag').textContent = d ? (costProposed ? 'proposed, not published' : '') : '';
+  $('costFlag').classList.toggle('proposed', !!(d && costProposed));
+  if (!d) {
+    root.append(el('div', {cls:'cp-totals'},
+      el('div', null, el('label', {text:'Today'}), el('b', {id:'costVal', cls:'big nodata', text:'No cost data'}), el('small', {id:'costSub', text:'Not published'})),
+      el('div', null, el('label', {text:'Month to date'}), el('b', {id:'costMonth', cls:'big nodata', text:'No cost data'}), el('small', {text:'Not published'}))));
+    const ul = el('ul', {cls:'cp-cats'});
+    ul.append(el('li', {'data-k':'api'}, el('span', {cls:'nm', text:'Agent API'}), nodata()));
+    root.append(cpSection('Registered AI agents', ul), el('p', {cls:'cp-note', text:'No agent cost document is available. Nothing is estimated from activity, and no zero is shown where nothing was reported.'}));
+    return;
+  }
+  const t = d.today.api, m = d.month.api;
+  const tot = (c, id, lab, sid) => el('div', null, el('label', {text:lab}), el('b', {id, cls:'big' + (c.amount_eur === null ? ' nodata' : ''), text: c.amount_eur === null ? 'No cost data' : eur(c.amount_eur)}), el('small', {id:sid, text:'agent API · ' + coverage(c)}));
+  root.append(el('div', {cls:'cp-totals'}, tot(t, 'costVal', 'Today ' + DAY_FMT(d.today.date), 'costSub'), tot(m, 'costMonth', 'Month to date', null)));
+  const ul = el('ul', {cls:'cp-cats'});
+  ul.append(el('li', {'data-k':'api', 'data-s':t.state}, el('span', {cls:'nm', text:'Agent API'}), money(t) === null ? nodata() : el('span', {cls:'cv', text:money(t)}),
+    el('small', null, document.createTextNode((t.state === 'recorded' ? 'recorded · ' : 'unavailable · ') + coverage(t) + (m.amount_eur !== null ? ' · month ' + eur(m.amount_eur) : '')), t.original ? el('i', {text:' · ' + origText(t.original)}) : null)));
+  root.append(cpSection('Registered AI agents, today', ul));
+  root.append(cpSection('Daily trend, last 14 days', trendSvg(d.daily), el('div', {cls:'cp-legend'}, el('span', {'data-k':'api', text:'Agent API'}), el('span', {cls:'na', text:'No data'}))));
+  const ag = el('ul', {cls:'cp-rows'});
+  for (const a of d.by_agent) { const c = a.month.api; ag.append(el('li', null, el('span', {cls:'nm', text:a.name.replace(/\s*\([^)]*\)/, '')}), c.state === 'recorded' ? el('span', {cls:'cv', text:eur(c.amount_eur)}) : nodata(), el('small', {text:coverage(c)}), allowanceLine(a.allowance))); }
+  root.append(cpSection('By agent, month to date', ag));
+  const md = el('ul', {cls:'cp-chips'});
+  for (const x of d.by_model_tier) { const c = x.month.api; md.append(el('li', {'data-s':c.state}, el('span', {text:TIER_LABEL[x.tier]}), c.state === 'recorded' ? el('b', {text:eur(c.amount_eur)}) : el('em', {text:'no reports'}))); }
+  root.append(cpSection('By AI model (reported tier), month to date', md));
+  const ex = el('ul', {cls:'cp-rows cp-exec'});
+  for (const e of d.executions.slice(0, 6)) { const ag0 = A.REGISTER.find(r => r.code === e.agent_id); ex.append(el('li', null, el('span', {cls:'nm', text:A.formatNicosia(Date.parse(e.at_utc), 'time') + '  ' + (ag0 ? ag0.name.replace(/\s*\([^)]*\)/, '') : 'Agent')}), e.cost_eur === null ? nodata() : el('span', {cls:'cv', text:eur(e.cost_eur)}), el('small', {text:(e.tier ? TIER_LABEL[e.tier] : 'tier not stated') + (e.mode ? ', ' + (e.mode === 'dry_run' ? 'dry run' : 'live') : '')}))); }
+  root.append(cpSection('Recent executions', d.executions.length ? ex : el('p', {cls:'cp-note', text:'No executions reported yet.'})));
+  root.append(cpSection('Token usage', el('div', {cls:'cp-tok'}, el('span', {text:'Input, output and cache tokens'}), nodata()), el('p', {cls:'cp-note', text:GAP_TEXT.token_counts.unavailable})));
+  const det = el('details', {cls:'cp-gaps'}, el('summary', {text:'Scope and sources'}));
+  det.append(el('p', {cls:'cp-note', text:'Registered AI agents only. General subscriptions, hosting, GitHub and other company costs are not included in any figure.'}));
+  const gl = el('ul', {cls:'cp-gl'});
+  for (const g of d.gaps) if (g.subject !== 'token_counts') gl.append(el('li', {'data-s':g.state, text:GAP_TEXT[g.subject][g.state]}));
+  det.append(gl, el('p', {cls:'cp-note', text:d.evidence.note + '. Generated ' + A.formatNicosia(Date.parse(d.generated_at_utc), 'datetime') + '.'}));
+  root.append(det);
+}
+
+/* ---------- Camera, Earth and backdrop (decorative layer, see acc_visual.js) ---------- */
+const FXH = { age: ms => window.ACC_FX ? window.ACC_FX.ageText(ms) : '', ageShort: ms => { const m = Math.max(0, Math.round(ms / 60000)); return m < 1 ? '<1 min' : m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h' : Math.floor(m / 1440) + ' d'; } };
+const clampN = (v, a, b) => Math.min(b, Math.max(a, v));
+const isMobile = () => !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+let vb = [0, 0, 1200, 800], baseBox = vb.slice(), camId = null, camTween = null, fx = null;
+function stageSize(){ const r = $('stage').getBoundingClientRect(); return {w: r.width || 1200, h: r.height || 800}; }
+function fitBox(){
+  const s = stageSize(), a = s.w / s.h, cb = isMobile() ? CONTENT_M : CONTENT;
+  let bw = cb.w, bh = cb.h; if (bw / bh < a) bw = bh * a; else bh = bw / a;
+  return [cb.x + cb.w / 2 - bw / 2, cb.y + cb.h / 2 - bh / 2, bw, bh];
+}
+function applyBox(v){ vb = v; $('orbit').setAttribute('viewBox', v.map(n => n.toFixed(1)).join(' ')); layoutFx(); }
+function earthSide(k){ return 2 * GLOBE_R * k * fx.earth.ratio; }
+function layoutFx(){
+  if (!fx) return;
+  const r = $('orbit').getBoundingClientRect(), h = $('stage').getBoundingClientRect();
+  if (!r.width) return;
+  const k = r.width / vb[2], side = earthSide(k), e = $('earth');
+  e.style.width = e.style.height = side.toFixed(1) + 'px';
+  e.style.left = ((r.left - h.left) + (C.x - vb[0]) * k - side / 2).toFixed(1) + 'px';
+  e.style.top = ((r.top - h.top) + (C.y - vb[1]) * k - side / 2).toFixed(1) + 'px';
+  fx.backdrop.shift(-(vb[0] - baseBox[0]) * k * .25, -(vb[1] - baseBox[1]) * k * .25);
+  fx.backdrop.setCenter(r.left + (C.x - vb[0]) * k, r.top + (C.y - vb[1]) * k, GLOBE_R * k);
+}
+function sizeEarth(){ if (!fx) return; const r = $('orbit').getBoundingClientRect(); fx.earth.size(earthSide(r.width / baseBox[2]) * 1.5 * fx.q); }
+function setBase(){ baseBox = fitBox(); if (!camId) applyBox(baseBox.slice()); }
+const uni = (a, b) => { const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y), x2 = Math.max(a.x + a.w, b.x + b.w), y2 = Math.max(a.y + a.h, b.y + b.h); return {x, y, w:x2 - x, h:y2 - y}; };
+function boxFor(id){
+  const s = stageSize(), a = s.w / s.h, mob = isMobile();
+  let U, panelLeft = true;
+  if (id === '00') U = {x:C.x - 230, y:C.y - 230, w:460, h:460};
+  else {
+    const p = pos(id), node = {x:p.x - NR - 26, y:p.y - NR - 30, w:2 * (NR + 26), h:2 * (NR + 30)};
+    U = mob ? node : uni(node, plates[id]); panelLeft = !(id === '05' || id === '06');
+  }
+  const frac = mob ? 0 : .34;
+  let bw = U.w * 1.2 / (1 - frac), bh = bw / a;
+  if (bh < U.h * 1.3) { bh = U.h * 1.3; bw = bh * a; }
+  if (bw < baseBox[2] * .68) { bw = baseBox[2] * .68; bh = bw / a; }
+  if (bw > baseBox[2]) { bw = baseBox[2]; bh = baseBox[3]; }
+  const m = bw * .04;
+  let x = mob ? U.x + U.w / 2 - bw / 2 : panelLeft ? U.x + U.w + m - bw : U.x - m, y = U.y + U.h / 2 - bh / 2;
+  x = clampN(x, baseBox[0] - bw * .1, baseBox[0] + baseBox[2] - bw * .9); y = clampN(y, baseBox[1] - bh * .04, baseBox[1] + baseBox[3] - bh * .96);
+  return [x, y, bw, bh];
+}
+function flyTo(target){
+  if (camTween) camTween.cancel();
+  camTween = window.ACC_FX ? window.ACC_FX.tween(vb.slice(), target, 700, applyBox, () => { camTween = null; }) : (applyBox(target), null);
+}
+function zoomTo(id){ if (camId === id) return; camId = id; flyTo(boxFor(id)); }
+function zoomHome(){ if (!camId) return; camId = null; flyTo(baseBox.slice()); }
+const par = {x:0, y:0, tx:0, ty:0};
+function initParallax(){
+  if (!window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches) return;
+  window.addEventListener('pointermove', e => { par.tx = (e.clientX / innerWidth - .5) * 2; par.ty = (e.clientY / innerHeight - .5) * 2; }, {passive:true});
+}
+function stepParallax(){
+  par.x += (par.tx - par.x) * .06; par.y += (par.ty - par.y) * .06;
+  if (Math.abs(par.tx - par.x) < .002 && Math.abs(par.ty - par.y) < .002 && !par.moving) return;
+  par.moving = Math.abs(par.tx - par.x) > .002 || Math.abs(par.ty - par.y) > .002;
+  $('earth').style.transform = `translate3d(${(-par.x * 14).toFixed(1)}px, ${(-par.y * 9).toFixed(1)}px, 0)`;
+  $('orbit').style.transform = `translate3d(${(par.x * 6).toFixed(1)}px, ${(par.y * 4).toFixed(1)}px, 0)`;
+  if (fx) fx.backdrop.parallax(par.x * 26, par.y * 16);
+}
+function initFx(){
+  if (!window.ACC_FX || /jsdom/i.test(navigator.userAgent) || !document.createElement('canvas').getContext) return;
+  try {
+    const earth = window.ACC_FX.createEarth($('earth')), backdrop = window.ACC_FX.createBackdrop($('fxBg'));
+    fx = {earth, backdrop, q:1, ms:0, last:0, gap:50, lowCount:0};
+    backdrop.resize(); sizeEarth(); layoutFx(); initParallax();
+    fx.loop = window.ACC_FX.loop([(t, n) => {
+      if (n % 3 === 0) backdrop.draw(t);
+      if (t - fx.last >= fx.gap) {
+        const t0 = performance.now(); earth.draw(t); const dt = performance.now() - t0; fx.last = t; fx.ms = fx.ms ? fx.ms * .85 + dt * .15 : dt;
+        if (fx.ms > 24 && fx.q > .5 && ++fx.lowCount > 12) { fx.q *= .82; fx.lowCount = 0; sizeEarth(); }       // adapt quality to the machine
+        else if (fx.ms > 45) fx.gap = 100;
+      }
+      stepParticles(t); stepParallax();
+    }], 30);
+    let rt = 0;
+    const relayout = () => { clearTimeout(rt); rt = setTimeout(() => { backdrop.resize(); setBase(); sizeEarth(); layoutFx(); fx.loop.once(); }, 90); };
+    window.addEventListener('resize', relayout);
+    if (window.ResizeObserver) new ResizeObserver(relayout).observe($('stage'));
+    window.ACC_PERF = () => ({earthMs:fx.ms, quality:fx.q, gap:fx.gap});
+  } catch (err) { fx = null; }
+}
+
+/* ---------- Render ---------- */
+function render(){
+  const sum = A.summarise(store, nowFn());
+  const stale = !!(pubInfo && pubInfo.generated && nowFn() - Date.parse(pubInfo.generated) > FEED_STALE_MS);
+  $('notice').textContent = lastOkMs ? 'Last synchronised: ' + A.formatNicosia(lastOkMs, 'clock') + ' ' + A.tzLabel(lastOkMs) + (stale ? ' \u00b7 feed stale' : '') : 'Not synchronised';
+  $('notice').classList.toggle('stale', stale || !lastOkMs);
+  const ap = $('approvals'), apt = $('apprTitle'); ap.classList.toggle('vh', !sum.approvals.length); apt.classList.toggle('vh', !sum.approvals.length);
+  renderKpis(sum); renderCost(); renderFeed(); renderKey(); renderActivity(); renderApprovals(sum); renderStreams(sum);
+  renderConnections(); renderExceptions(); renderOrbitData(sum); renderAgents(sum);
+  if (openStreamId) openStream(openStreamId, false);
+  if (selKey) drawAgent();
+  tickClock();
+}
+
+setBase();
+render();
+initFx();
+loadPublicStatus(); loadPublicCost();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { loadPublicStatus(); loadPublicCost(); } });
+setInterval(tickClock, 1000);
+setInterval(render, 30000);
+setInterval(loadPublicStatus, 60000);
+setInterval(loadPublicCost, 60000);
+
+/* Test hooks */
+window.ACC_APP = { render, setClock(fn){ nowFn = fn; render(); }, openAgent, openStream, applyPublicStatus, applyPublicCost };
+})();
+</script>
+</body>
+</html>
